@@ -1,13 +1,3 @@
-Changes included in this overdrive run (most recent commits):
-1b62653 Rename log to 32_quality_60_overdrive.log to match naming scheme
-853b910 Rename ri-quality-results overdrive report to 32_CHANGES_SINCE_LAST_COMMIT.log to match naming scheme\n\nCo-authored-by: openhands <openhands@all-hands.dev>
-cf77a73 Clean ri-quality-results: remove numeric timestamp logs; rename overdrive report to quality_60_overdrive_2025-12-22.log
-0ad0e11 Optimize apply loop: operate in i32 to avoid repeated casting and clamping; avoid allocations for skipped blocks
-8fc1182 Use fixed-point quant multiplication in IDCT decode paths to avoid per-coeff f32 ops
-6feb4d6 Avoid intermediate interleaved DCT storage: decode RANS directly into per-plane coefficient buffers; use static zero blocks to avoid allocations\n---\n
-Generated on: Mon Dec 22 14:00:05 UTC 2025 UTC
-Author: openhands <openhands@all-hands.dev>
-\n
 ri-quality report
 Input: ./peng.mp4
 Frames processed: 60 (limit: 60), resolution: 1920x1280 @ 25 fps
