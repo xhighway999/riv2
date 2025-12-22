@@ -364,7 +364,8 @@ The `residual_yuv420` field contains RANS-compressed bytes directly (no addition
      - For each block (Y, U, V):
        - **Decode RANS**: Decode EOB index, then decode coefficients from 0 to EOB using significance bits, sign bits, and magnitude
        - **Reverse zigzag**: Convert 1D zigzag order back to 2D (row-major)
-       - **Dequantization**: `dct_coeff = quantized * quant_step`
+       - **Dequantization**: `dct_coeff = quantized * quant_step`.
+         Implementation note: the decoder uses fixed-point multiplication to avoid per-coefficient floating-point operations. In the code this is implemented as `q_fp = round(quant_step * 2^14)` and each dequantized value is computed with `((quantized_i16 as i32) * q_fp + (1<<13)) >> 14`, matching the behavior in `reitero_video/reitero_dct/src/lib.rs`.
        - **Inverse 2D DCT**: Reconstruct residual block
 3. Apply residuals to predicted YUV420 planes: `recon = predicted + residual` (clamped to [0, 255])
 4. Convert reconstructed YUV420 back to RGB24
