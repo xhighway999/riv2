@@ -569,6 +569,7 @@ impl<R: VideoReader> Decoder<R> {
                 }
 
                 let predicted = build_predicted(prev, storage_w, storage_h, &mvs);
+                let t_res0 = Instant::now();
                 let curr = ResidualDecoder::decode_inter(InterResidualDecodeParams {
                     predicted_yuv: &predicted,
                     storage_width: self.header.storage_width,
@@ -581,6 +582,7 @@ impl<R: VideoReader> Decoder<R> {
                 .map_err(|e| {
                     DecodeError::InvalidFrame(format!("Inter residual decode error: {e}"))
                 })?;
+                self.timings.residual_ns += t_res0.elapsed().as_nanos() as u64;
                 self.prev_recon_yuv = Some(curr.clone());
                 self.prev_mvs = Some(mvs.clone());
                 curr

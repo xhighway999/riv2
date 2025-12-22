@@ -76,8 +76,8 @@ impl DecodeStats {
 
     pub fn print_summary(&self) {
         let total_secs = self.total_duration.as_secs_f64();
-        let avg_fps = self.frame_count as f64 / total_secs;
-        let realtime_factor = avg_fps / self.target_fps;
+        let avg_fps = if total_secs > 0.0 { self.frame_count as f64 / total_secs } else { 0.0 };
+        let realtime_factor = if self.target_fps > 0.0 { avg_fps / self.target_fps } else { 0.0 };
 
         println!("\n\n=== Decoding Summary ===");
         println!("Resolution:      {}x{}", self.width, self.height);
@@ -93,6 +93,15 @@ impl DecodeStats {
             self.worst_frame_time.as_secs_f64() * 1000.0,
             1.0 / self.worst_frame_time.as_secs_f64()
         );
+        println!("\nPhase attribution (cumulative over all frames):");
+        let total_ns = (total_secs * 1e9) as u64;
+        let pct = |ns: u64| -> f64 { if total_ns > 0 { (ns as f64) * 100.0 / (total_ns as f64) } else { 0.0 } };
+        println!("  read_bits:   {:>10} ns ({:>5.1}%)", self.total_read_ns, pct(self.total_read_ns));
+        println!("  parse_frame: {:>10} ns ({:>5.1}%)", self.total_parse_ns, pct(self.total_parse_ns));
+        println!("  mv_decode:   {:>10} ns ({:>5.1}%)", self.total_mv_ns, pct(self.total_mv_ns));
+        println!("  build_pred:  {:>10} ns ({:>5.1}%)", self.total_pred_ns, pct(self.total_pred_ns));
+        println!("  residual:    {:>10} ns ({:>5.1}%)", self.total_resid_ns, pct(self.total_resid_ns));
+        println!("  yuv->rgb:    {:>10} ns ({:>5.1}%)", self.total_rgb_ns, pct(self.total_rgb_ns));
         println!("========================\n");
     }
 }
