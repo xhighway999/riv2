@@ -634,22 +634,26 @@ impl ResidualDecoder {
         const Y_COEFFS_PER_BLOCK: usize = Y_BLOCK_SIZE * Y_BLOCK_SIZE; // 256
         const UV_COEFFS_PER_BLOCK: usize = UV_BLOCK_SIZE * UV_BLOCK_SIZE; // 64
 
-        let mut dct_coefficients =
-            Vec::with_capacity(blocks_total * (Y_COEFFS_PER_BLOCK + UV_COEFFS_PER_BLOCK * 2));
+        // Preallocate per-plane coefficient arrays directly to avoid an interleaved copy later
+        let mut y_coeffs_all = Vec::with_capacity(blocks_total * Y_COEFFS_PER_BLOCK);
+        let mut u_coeffs_all = Vec::with_capacity(blocks_total * UV_COEFFS_PER_BLOCK);
+        let mut v_coeffs_all = Vec::with_capacity(blocks_total * UV_COEFFS_PER_BLOCK);
+
+        // Static zero blocks to avoid repeated allocations for skipped blocks
+        static ZERO_Y_BLOCK: [i16; 256] = [0i16; 256];
+        static ZERO_UV_BLOCK: [i16; 64] = [0i16; 64];
 
         let t_r0 = Instant::now();
         for by in 0..blocks_h {
             for bx in 0..blocks_w {
                 let bi = by * blocks_w + bx;
-                let _block_x = bx;
-                let _block_y = by;
 
                 // IMPORTANT: skip_mask is authoritative - skipped blocks have no RANS data
                 if p.skip_mask[bi] {
-                    // Skipped block: no RANS data was written, use all zeros
-                    dct_coefficients.extend_from_slice(&vec![0i16; Y_COEFFS_PER_BLOCK]);
-                    dct_coefficients.extend_from_slice(&vec![0i16; UV_COEFFS_PER_BLOCK]);
-                    dct_coefficients.extend_from_slice(&vec![0i16; UV_COEFFS_PER_BLOCK]);
+                    // Skipped block: no RANS data was written, use zeros
+                    y_coeffs_all.extend_from_slice(&ZERO_Y_BLOCK);
+                    u_coeffs_all.extend_from_slice(&ZERO_UV_BLOCK);
+                    v_coeffs_all.extend_from_slice(&ZERO_UV_BLOCK);
                 } else {
                     // Non-skipped block: decode RANS blocks for Y, U, V
                     let (y_coeffs, u_coeffs, v_coeffs) = rans_decoder.decode_block(
@@ -657,9 +661,9 @@ impl ResidualDecoder {
                         UV_COEFFS_PER_BLOCK,
                         UV_COEFFS_PER_BLOCK,
                     );
-                    dct_coefficients.extend_from_slice(&y_coeffs);
-                    dct_coefficients.extend_from_slice(&u_coeffs);
-                    dct_coefficients.extend_from_slice(&v_coeffs);
+                    y_coeffs_all.extend_from_slice(&y_coeffs);
+                    u_coeffs_all.extend_from_slice(&u_coeffs);
+                    v_coeffs_all.extend_from_slice(&v_coeffs);
                 }
             }
         }
@@ -671,26 +675,6 @@ impl ResidualDecoder {
         let mut res_y = vec![0i16; y_len];
         let mut res_u = vec![0i16; uv_len];
         let mut res_v = vec![0i16; uv_len];
-
-        // De-interleave coefficients
-        let t_d0 = Instant::now();
-        let mut y_coeffs_all = Vec::with_capacity(blocks_total * Y_COEFFS_PER_BLOCK);
-        let mut u_coeffs_all = Vec::with_capacity(blocks_total * UV_COEFFS_PER_BLOCK);
-        let mut v_coeffs_all = Vec::with_capacity(blocks_total * UV_COEFFS_PER_BLOCK);
-
-        let mut coeff_idx = 0;
-        for _ in 0..blocks_total {
-            y_coeffs_all
-                .extend_from_slice(&dct_coefficients[coeff_idx..coeff_idx + Y_COEFFS_PER_BLOCK]);
-            coeff_idx += Y_COEFFS_PER_BLOCK;
-            u_coeffs_all
-                .extend_from_slice(&dct_coefficients[coeff_idx..coeff_idx + UV_COEFFS_PER_BLOCK]);
-            coeff_idx += UV_COEFFS_PER_BLOCK;
-            v_coeffs_all
-                .extend_from_slice(&dct_coefficients[coeff_idx..coeff_idx + UV_COEFFS_PER_BLOCK]);
-            coeff_idx += UV_COEFFS_PER_BLOCK;
-        }
-        DEINTERLEAVE_NS.fetch_add(t_d0.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         let t_dct0 = Instant::now();
         reitero_dct::decode_plane_16x16(
