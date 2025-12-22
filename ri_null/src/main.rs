@@ -27,11 +27,15 @@ fn main() -> Result<()> {
     let mut last = start;
     let mut frames = 0u64;
     let mut read_ns = 0u64; let mut parse_ns = 0u64; let mut mv_ns = 0u64; let mut pred_ns = 0u64; let mut resid_ns = 0u64; let mut rgb_ns = 0u64;
+    let mut rans_ns = 0u64; let mut deint_ns = 0u64; let mut dct_y_ns = 0u64; let mut dct_uv_ns = 0u64; let mut apply_ns = 0u64;
 
     while dec.has_more_frames() {
         dec.decode_frame_null()?;
         let t = dec.drain_timings();
         read_ns += t.read_bits_ns; parse_ns += t.parse_frame_ns; mv_ns += t.mv_decode_ns; pred_ns += t.build_pred_ns; resid_ns += t.residual_ns; rgb_ns += t.yuv_to_rgb_ns;
+        // drain residual-phase counters as well
+        let (r, d, y, uv, a) = reitero_residual::drain_residual_phase_counters();
+        rans_ns += r; deint_ns += d; dct_y_ns += y; dct_uv_ns += uv; apply_ns += a;
         frames += 1;
         let now = Instant::now();
         if frames % 25 == 0 { let fps = 25.0 / now.duration_since(last).as_secs_f64(); last = now; println!(".. {} frames, inst {:.2} FPS", frames, fps); }
@@ -49,5 +53,11 @@ fn main() -> Result<()> {
     println!("build_pred:  {:>12} ns ({:>5.1}%)", pred_ns, pct(pred_ns));
     println!("residual:    {:>12} ns ({:>5.1}%)", resid_ns, pct(resid_ns));
     println!("yuv->rgb:    {:>12} ns ({:>5.1}%)", rgb_ns, pct(rgb_ns));
+    println!("  residual sub-phases (ns):");
+    println!("    rans_decode: {:>12} ns ({:>5.1}%)", rans_ns, pct(rans_ns));
+    println!("    deinterleave: {:>12} ns ({:>5.1}%)", deint_ns, pct(deint_ns));
+    println!("    dct_y:        {:>12} ns ({:>5.1}%)", dct_y_ns, pct(dct_y_ns));
+    println!("    dct_uv:       {:>12} ns ({:>5.1}%)", dct_uv_ns, pct(dct_uv_ns));
+    println!("    apply:        {:>12} ns ({:>5.1}%)", apply_ns, pct(apply_ns));
     Ok(())
 }
