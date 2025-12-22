@@ -428,10 +428,13 @@ pub fn decode_plane_8x8(
                 coeff_idx += 64;
             } else {
                 let mut coeff_vecs: [i32x8; 8] = [i32x8::splat(0); 8];
+                // Use fixed-point quant multiplication to avoid per-coefficient f32 ops
+                let q_fp: i32 = (quant_step * (1<<14) as f32).round() as i32;
+                let q_round = 1 << 13;
                 for v in 0..8 {
                     let mut arr: [i32; 8] = [0; 8];
                     for u in 0..8 {
-                        arr[u] = (coeffs[coeff_idx] as f32 * quant_step).round() as i32;
+                        arr[u] = ((coeffs[coeff_idx] as i32) * q_fp + q_round) >> 14;
                         coeff_idx += 1;
                     }
                     coeff_vecs[v] = i32x8::new(arr);
@@ -561,10 +564,13 @@ pub fn decode_plane_16x16(
                 coeff_idx += 256;
             } else {
                 let mut coeff_vecs: [[i32x8; 2]; 16] = [[i32x8::splat(0); 2]; 16];
+                // Fixed-point quant multiply for 16x16 blocks
+                let q_fp: i32 = (quant_step * (1<<14) as f32).round() as i32;
+                let q_round = 1 << 13;
                 for v in 0..16 {
                     let mut arr: [i32; 16] = [0; 16];
                     for u in 0..16 {
-                        arr[u] = (coeffs[coeff_idx] as f32 * quant_step).round() as i32;
+                        arr[u] = ((coeffs[coeff_idx] as i32) * q_fp + q_round) >> 14;
                         coeff_idx += 1;
                     }
                     coeff_vecs[v][0] = i32x8::new([
