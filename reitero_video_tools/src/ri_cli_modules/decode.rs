@@ -4,6 +4,7 @@ use crate::ri_cli_modules::decode_stats::DecodeStats;
 use anyhow::{Context, Result};
 use ffmpeg_next as ffmpeg;
 use reitero_decode::Decoder;
+use reitero_video_common::Instrument;
 use std::io::Write;
 use std::process::{Child, Command, Stdio};
 

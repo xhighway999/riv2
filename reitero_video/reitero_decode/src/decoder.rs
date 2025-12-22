@@ -355,6 +355,8 @@ impl<R: VideoReader> Decoder<R> {
                     skip_mask.push(mark_skip);
                 }
                 self.timings.mv_decode_ns += t_mv0.elapsed().as_nanos() as u64;
+                // Instrument: mv_decode stop
+                reitero_video_common::Instrument::stop_measure("mv_decode");
 
                 // Residual data is RANS-compressed directly (no DEFLATE decompression needed)
                 let residual_data = &residual_yuv420;
@@ -362,6 +364,8 @@ impl<R: VideoReader> Decoder<R> {
                 let t_pred0 = Instant::now();
                 let predicted = build_predicted(prev, storage_w, storage_h, &mvs[..]);
                 self.timings.build_pred_ns += t_pred0.elapsed().as_nanos() as u64;
+                // Instrument: residual start
+                reitero_video_common::Instrument::start_measure("residual");
                 let curr = ResidualDecoder::decode_inter(InterResidualDecodeParams {
                     predicted_yuv: &predicted,
                     storage_width: self.header.storage_width,
@@ -374,6 +378,8 @@ impl<R: VideoReader> Decoder<R> {
                 .map_err(|e| {
                     DecodeError::InvalidFrame(format!("Inter residual decode error: {e}"))
                 })?;
+                // Instrument: residual stop
+                reitero_video_common::Instrument::stop_measure("residual");
                 // Pull in-process residual-phase counters and attribute to global timings
                 let (rns, dns, dyns, duvns, ans) = reitero_residual::drain_residual_phase_counters();
                 self.timings.residual_ns += rns + dns + dyns + duvns + ans;
