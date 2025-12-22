@@ -819,6 +819,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ri_null"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "reitero_decode",
+ "reitero_video_common",
+]
+
+[[package]]
 name = "rustc-hash"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -56,6 +56,8 @@ impl DecodedFrame {
             frame_type,
         }
     }
+}
+
 #[derive(Default, Debug, Clone, Copy)]
 pub struct DecodePhaseTimings {
     pub read_bits_ns: u64,
@@ -64,8 +66,6 @@ pub struct DecodePhaseTimings {
     pub build_pred_ns: u64,
     pub residual_ns: u64,
     pub yuv_to_rgb_ns: u64,
-}
-
 }
 
 /// Video decoder for custom ReItero format

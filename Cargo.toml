@@ -3,7 +3,16 @@ cargo-features = ["profile-rustflags"]
 
 [workspace]
 resolver = "3"
-members = ["reitero_video/reitero_decode", "reitero_video/reitero_encode", "reitero_video/reitero_residual", "reitero_video/reitero_video_common", "reitero_video_tools", "reitero_video_quality_test", "reitero_video/reitero_dct"]
+members = [
+    "reitero_video/reitero_decode",
+    "reitero_video/reitero_encode",
+    "reitero_video/reitero_residual",
+    "reitero_video/reitero_video_common",
+    "reitero_video_tools",
+    "reitero_video_quality_test",
+    "reitero_video/reitero_dct",
+    "ri_null",
+]
 
 [profile.dev]
 opt-level = 1

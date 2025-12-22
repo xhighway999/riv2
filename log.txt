@@ -16,3 +16,21 @@
 2025-12-22T12:59:10+00:00 Run null decode after MC chroma sampling optimization
 2025-12-22T13:00:14+00:00 perf stat: null decode WITH residuals
 2025-12-22T13:02:09+00:00 Rerun null decode with per-phase timings
+2025-12-22T13:03:54+00:00 Installing rustup + nightly toolchain
+2025-12-22T13:04:16+00:00 Rust installed
+2025-12-22T13:04:27+00:00 Rebuild ri-cli fast after toolchain install
+Video: 1920x1280 @ 25 fps, 100 frames
+.. 25 frames, inst 9.41 FPS
+.. 50 frames, inst 9.05 FPS
+.. 75 frames, inst 13.16 FPS
+.. 100 frames, inst 11.69 FPS
+
+=== Null Decode Summary ===
+Frames: 100 time: 9.46s avg: 10.57 FPS
+read_bits:        3697292 ns (  0.0%)
+parse_frame:       262547 ns (  0.0%)
+mv_decode:              0 ns (  0.0%)
+build_pred:             0 ns (  0.0%)
+residual:      5801541400 ns ( 61.3%)
+yuv->rgb:               0 ns (  0.0%)
+Updating apt and installing perf tooling...

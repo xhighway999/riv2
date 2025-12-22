@@ -1,0 +1,9 @@
+[package]
+name = "ri_null"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0"
+reitero_decode = { path = "../reitero_video/reitero_decode" }
+reitero_video_common = { path = "../reitero_video/reitero_video_common" }

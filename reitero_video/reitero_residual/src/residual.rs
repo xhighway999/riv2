@@ -25,8 +25,17 @@ pub fn quant_step_from_quality(quality: u8) -> f32 {
 use crate::jpeg::{decode_jpeg_rgb_with_dims, encode_jpeg_rgb};
 use crate::rans::{RansDecoder, RansEncoder};
 use yuv::YuvChromaSubsampling;
+use std::time::Instant;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 pub type Result<T> = std::result::Result<T, ResidualError>;
+
+// Lightweight in-process profiler counters (ns)
+static RANS_DECODE_NS: AtomicU64 = AtomicU64::new(0);
+static DEINTERLEAVE_NS: AtomicU64 = AtomicU64::new(0);
+static DCT_Y_NS: AtomicU64 = AtomicU64::new(0);
+static DCT_UV_NS: AtomicU64 = AtomicU64::new(0);
+static APPLY_NS: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Error)]
 pub enum ResidualError {
