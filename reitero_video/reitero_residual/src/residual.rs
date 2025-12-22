@@ -627,6 +627,7 @@ impl ResidualDecoder {
         let mut dct_coefficients =
             Vec::with_capacity(blocks_total * (Y_COEFFS_PER_BLOCK + UV_COEFFS_PER_BLOCK * 2));
 
+        let t_r0 = Instant::now();
         for by in 0..blocks_h {
             for bx in 0..blocks_w {
                 let bi = by * blocks_w + bx;
@@ -652,6 +653,7 @@ impl ResidualDecoder {
                 }
             }
         }
+        RANS_DECODE_NS.fetch_add(t_r0.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         // Decode DCT coefficients to residual planes
         let y_len = (p.storage_width * p.storage_height) as usize;
@@ -661,6 +663,7 @@ impl ResidualDecoder {
         let mut res_v = vec![0i16; uv_len];
 
         // De-interleave coefficients
+        let t_d0 = Instant::now();
         let mut y_coeffs_all = Vec::with_capacity(blocks_total * Y_COEFFS_PER_BLOCK);
         let mut u_coeffs_all = Vec::with_capacity(blocks_total * UV_COEFFS_PER_BLOCK);
         let mut v_coeffs_all = Vec::with_capacity(blocks_total * UV_COEFFS_PER_BLOCK);
@@ -677,7 +680,9 @@ impl ResidualDecoder {
                 .extend_from_slice(&dct_coefficients[coeff_idx..coeff_idx + UV_COEFFS_PER_BLOCK]);
             coeff_idx += UV_COEFFS_PER_BLOCK;
         }
+        DEINTERLEAVE_NS.fetch_add(t_d0.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
+        let t_dct0 = Instant::now();
         reitero_dct::decode_plane_16x16(
             &y_coeffs_all,
             &mut res_y,
@@ -687,6 +692,8 @@ impl ResidualDecoder {
             quant_step,
             p.skip_mask,
         );
+        DCT_Y_NS.fetch_add(t_dct0.elapsed().as_nanos() as u64, Ordering::Relaxed);
+        let t_dctuv0 = Instant::now();
         reitero_dct::decode_plane_8x8(
             &u_coeffs_all,
             &mut res_u,
@@ -705,6 +712,7 @@ impl ResidualDecoder {
             quant_step,
             p.skip_mask,
         );
+        DCT_UV_NS.fetch_add(t_dctuv0.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         // Copy predicted planes to contiguous arrays (matching residual storage format)
         let (mut recon_y, mut recon_u, mut recon_v) = p.predicted_yuv.clone_planes();
@@ -712,6 +720,7 @@ impl ResidualDecoder {
         // Apply residual in YUV, but force residual=0 on skipped blocks (even if payload isn't neutral).
         // This keeps skip semantics correct.
         // Y plane: 16x16 per block; U/V: 8x8 per block (YUV420 halves both dimensions).
+        let t_a0 = Instant::now();
         for by in 0..blocks_h {
             for bx in 0..blocks_w {
                 let bi = by * blocks_w + bx;
@@ -745,6 +754,7 @@ impl ResidualDecoder {
                 }
             }
         }
+        APPLY_NS.fetch_add(t_a0.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         // Convert recon YUV planes back to RGB24
         Yuv420Frame::from_planes(storage_w, storage_h, recon_y, recon_u, recon_v)
