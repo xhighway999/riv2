@@ -1,0 +1,14 @@
+2025-12-22T12:06:19+00:00 Starting baseline single-thread decode runs
+2025-12-22T12:08:04+00:00 Starting baseline single-thread decode runs
+2025-12-22T12:08:04+00:00 Warmup complete
+2025-12-22T12:08:04+00:00 peng100.riv decode(null) RAYON=1 fps=
+2025-12-22T12:08:05+00:00 peng100.riv decode(null) RAYON=1 fps=
+2025-12-22T12:08:05+00:00 peng100.riv decode(null) RAYON=1 fps=
+2025-12-22T12:08:29+00:00 Encoding peng.mp4 -> peng100.riv (100 frames)
+2025-12-22T12:08:50+00:00 Encode complete
+2025-12-22T12:09:02+00:00 peng100.riv single-thread decode avg_fps=13.90
+2025-12-22T12:09:10+00:00 peng100.riv single-thread decode avg_fps=13.77
+2025-12-22T12:09:17+00:00 peng100.riv single-thread decode avg_fps=13.79
+2025-12-22T12:13:16+00:00 peng100.riv single-thread decode(null-no-rgb) avg_fps=14.10
+2025-12-22T12:14:10+00:00 Baseline established: RAYON=1 decode(null) avg FPS: 13.90, 13.77, 13.79; null fast-path (no RGB): 14.10
+[] Accept ruleset; proceeding to instrument timings, preallocations, and re-measure. 2025-12-22T12:37:52Z

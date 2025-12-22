@@ -238,6 +238,7 @@ pub fn build_predicted(
     let mut predicted_u = vec![0u8; (width / 2) * (height / 2)];
     let mut predicted_v = vec![0u8; (width / 2) * (height / 2)];
 
+    // Optimize: sample Y for every pixel, but sample U/V only once per 2x2 luma area.
     for by in 0..blocks_h {
         for bx in 0..blocks_w {
             let mv = mvs[by * blocks_w + bx];
@@ -248,28 +249,49 @@ pub fn build_predicted(
 
             for yy in 0..BLOCK_SIZE as i32 {
                 let y = (y0 + yy).clamp(0, (height as i32) - 1);
+                let y_usize = y as usize;
+                let y_idx_base = y_usize * width;
+                let even_y = (y_usize & 1) == 0;
 
                 for xx in 0..BLOCK_SIZE as i32 {
                     let x = (x0 + xx).clamp(0, (width as i32) - 1);
+                    let x_usize = x as usize;
                     let rx_hp = x * 2 + mv_dx_hp;
                     let ry_hp = y * 2 + mv_dy_hp;
-                    let sample = sample_rgb_halfpel(prev, width, height, rx_hp, ry_hp);
-                    let x_usize = x as usize;
-                    let y_usize = y as usize;
-                    let y_idx = y_usize * width + x_usize;
-                    predicted_y[y_idx] = sample[0];
 
-                    if (x_usize & 1) == 0 && (y_usize & 1) == 0 {
+                    // Luma sample
+                    let y_sample = sample_plane_halfpel(prev.y_plane(), width, height, rx_hp, ry_hp);
+                    predicted_y[y_idx_base + x_usize] = y_sample;
+
+                    // Chroma sample only on even luma coordinates (maps to one chroma sample)
+                    if even_y && (x_usize & 1) == 0 {
+                        let chroma_width = width / 2;
+                        let chroma_height = height / 2;
+                        let u_sample = sample_plane_halfpel(
+                            prev.u_plane(),
+                            chroma_width,
+                            chroma_height,
+                            rx_hp / 2,
+                            ry_hp / 2,
+                        );
+                        let v_sample = sample_plane_halfpel(
+                            prev.v_plane(),
+                            chroma_width,
+                            chroma_height,
+                            rx_hp / 2,
+                            ry_hp / 2,
+                        );
                         let chroma_x = x_usize / 2;
                         let chroma_y = y_usize / 2;
-                        let chroma_idx = chroma_y * (width / 2) + chroma_x;
-                        predicted_u[chroma_idx] = sample[1];
-                        predicted_v[chroma_idx] = sample[2];
+                        let chroma_idx = chroma_y * chroma_width + chroma_x;
+                        predicted_u[chroma_idx] = u_sample;
+                        predicted_v[chroma_idx] = v_sample;
                     }
                 }
             }
         }
     }
+
     Yuv420Frame::from_planes(width, height, predicted_y, predicted_u, predicted_v)
         .unwrap_or_else(|e| panic!("failed to build predicted YUV420 frame: {e}"))
 }

@@ -55,10 +55,25 @@ impl DecodedFrame {
             frame_type,
         }
     }
+#[derive(Default, Debug, Clone, Copy)]
+pub struct DecodePhaseTimings {
+    pub read_bits_ns: u64,
+    pub parse_frame_ns: u64,
+    pub mv_decode_ns: u64,
+    pub build_pred_ns: u64,
+    pub residual_ns: u64,
+    pub yuv_to_rgb_ns: u64,
+}
+
 }
 
 /// Video decoder for custom ReItero format
 pub struct Decoder<R: VideoReader> {
+    // cumulative timings (ns) for coarse profiling
+    timings: DecodePhaseTimings,
+    // reusable scratch buffers to reduce per-frame allocations
+    mvs_scratch: Vec<MotionVector>,
+    skip_mask_scratch: Vec<bool>,
     _reader: R,
     header: VideoHeader,
     current_frame: u64,
@@ -80,6 +95,9 @@ impl<R: VideoReader> Decoder<R> {
         let header = Self::read_header(&mut reader)?;
 
         Ok(Self {
+            timings: DecodePhaseTimings::default(),
+            mvs_scratch: Vec::new(),
+            skip_mask_scratch: Vec::new(),
             _reader: reader,
             header,
             current_frame: 0,
@@ -151,6 +169,9 @@ impl<R: VideoReader> Decoder<R> {
         );
 
         self.current_frame += 1;
+        use std::time::Instant;
+        let t0 = Instant::now();
+
 
         Ok(frame)
     }
@@ -253,8 +274,12 @@ impl<R: VideoReader> Decoder<R> {
                 let mv_blocks = self.mv_rans_decoder.decode_frame(blocks_w, blocks_h);
 
                 // Reconstruct motion vectors from structured blocks
-                let mut mvs = Vec::with_capacity(num_blocks);
-                let mut skip_mask = Vec::with_capacity(num_blocks);
+                if self.mvs_scratch.len() < num_blocks { self.mvs_scratch.resize(num_blocks, MotionVector::from_raw(0,0,0)); }
+                if self.skip_mask_scratch.len() < num_blocks { self.skip_mask_scratch.resize(num_blocks, false); }
+                let mvs = &mut self.mvs_scratch;
+                let skip_mask = &mut self.skip_mask_scratch;
+                mvs.clear(); mvs.reserve_exact(num_blocks);
+                skip_mask.clear(); skip_mask.reserve_exact(num_blocks);
                 let bias_dx = global_mv.dx() as i16;
                 let bias_dy = global_mv.dy() as i16;
 
@@ -327,12 +352,12 @@ impl<R: VideoReader> Decoder<R> {
                 // Residual data is RANS-compressed directly (no DEFLATE decompression needed)
                 let residual_data = &residual_yuv420;
 
-                let predicted = build_predicted(prev, storage_w, storage_h, &mvs);
+                let predicted = build_predicted(prev, storage_w, storage_h, &mvs[..]);
                 let curr = ResidualDecoder::decode_inter(InterResidualDecodeParams {
                     predicted_yuv: &predicted,
                     storage_width: self.header.storage_width,
                     storage_height: self.header.storage_height,
-                    skip_mask: &skip_mask,
+                    skip_mask: &skip_mask[..],
                     residual_data: &residual_data,
                     inter_quality: quality,
                     skip_residuals: self.skip_residuals,
@@ -360,6 +385,203 @@ impl<R: VideoReader> Decoder<R> {
         Ok((out_frame_type, timestamp_ms, cropped))
     }
 
+    /// Decode the next frame but stop at storage YUV to avoid RGB conversion/crop (benchmark fast path)
+    pub fn decode_frame_null(&mut self) -> Result<()> {
+        // reset per-frame timings
+        self.timings = DecodePhaseTimings::default();
+        let (_ft, _ts, _yuv) = self.decode_next_yuv()?;
+        Ok(())
+    }
+
+    /// Internal: decode next frame producing storage-sized YUV420 frame without RGB conversion
+    fn decode_next_yuv(&mut self) -> Result<(FrameType, u64, Yuv420Frame)> {
+        if self.current_frame >= self.header.frame_count {
+            return Err(DecodeError::EndOfStream);
+        }
+
+        // Read timestamp + type first.
+        let mut head9 = [0u8; 9];
+        read_exact(&mut self._reader, &mut head9)?;
+        let timestamp_ms = u64::from_le_bytes([
+            head9[0], head9[1], head9[2], head9[3], head9[4], head9[5], head9[6], head9[7],
+        ]);
+        let frame_type = FrameType::from_u8(head9[8])
+            .ok_or_else(|| DecodeError::InvalidFrame("Bad frame_type".into()))?;
+
+        // Read remaining header pieces + payload, then parse.
+        let mut buf = Vec::new();
+        buf.extend_from_slice(&head9);
+
+        match frame_type {
+            FrameType::Intra => {
+                let mut size_buf = [0u8; 4];
+                read_exact(&mut self._reader, &mut size_buf)?;
+                buf.extend_from_slice(&size_buf);
+                let size = u32::from_le_bytes(size_buf) as usize;
+                let mut payload = vec![0u8; size];
+                read_exact(&mut self._reader, &mut payload)?;
+                buf.extend_from_slice(&payload);
+            }
+            FrameType::Inter => {
+                let mut quality_buf = [0u8; 1];
+                read_exact(&mut self._reader, &mut quality_buf)?;
+                buf.extend_from_slice(&quality_buf);
+
+                let mut global_mv_buf = [0u8; 3];
+                read_exact(&mut self._reader, &mut global_mv_buf)?;
+                buf.extend_from_slice(&global_mv_buf);
+
+                let mut mv_size_buf = [0u8; 4];
+                read_exact(&mut self._reader, &mut mv_size_buf)?;
+                buf.extend_from_slice(&mv_size_buf);
+                let mv_size = u32::from_le_bytes(mv_size_buf) as usize;
+                let mut mv = vec![0u8; mv_size];
+                read_exact(&mut self._reader, &mut mv)?;
+                buf.extend_from_slice(&mv);
+
+                let mut res_size_buf = [0u8; 4];
+                read_exact(&mut self._reader, &mut res_size_buf)?;
+                buf.extend_from_slice(&res_size_buf);
+                let res_size = u32::from_le_bytes(res_size_buf) as usize;
+                let mut payload = vec![0u8; res_size];
+                read_exact(&mut self._reader, &mut payload)?;
+                buf.extend_from_slice(&payload);
+            }
+        }
+
+        let (packed, _) = PackedFrame::from_bytes(&buf)
+            .ok_or_else(|| DecodeError::DecodingFailed("Failed to parse packed frame (v2)".into()))?;
+
+        let storage_w = self.header.storage_width as usize;
+        let storage_h = self.header.storage_height as usize;
+        let storage_yuv = match packed.data {
+            PackedFrameData::Intra { jpeg_rgb } => {
+                let yuv = ResidualDecoder::decode_intra(
+                    &jpeg_rgb,
+                    self.header.storage_width,
+                    self.header.storage_height,
+                )
+                .map_err(|e| DecodeError::InvalidFrame(format!("Intra JPEG decode error: {e}")))?;
+                self.prev_recon_yuv = Some(yuv.clone());
+                self.prev_mvs = None;
+                self.mv_rans_decoder.reset_contexts();
+                yuv
+            }
+            PackedFrameData::Inter {
+                quality,
+                global_mv,
+                mv_deflate,
+                residual_yuv420,
+            } => {
+                let prev = self.prev_recon_yuv.as_ref().ok_or_else(|| {
+                    DecodeError::InvalidFrame("Inter frame before first intra frame".into())
+                })?;
+
+                let blocks_w = storage_w / 16;
+                let blocks_h = storage_h / 16;
+                let num_blocks = blocks_w * blocks_h;
+
+                self.mv_rans_decoder.consume_frame(&mv_deflate);
+                let mv_blocks = self.mv_rans_decoder.decode_frame(blocks_w, blocks_h);
+
+                let mut mvs = Vec::with_capacity(num_blocks);
+                let mut skip_mask = Vec::with_capacity(num_blocks);
+                let bias_dx = global_mv.dx() as i16;
+                let bias_dy = global_mv.dy() as i16;
+
+                for (block_idx, block) in mv_blocks.iter().enumerate() {
+                    let bx = block_idx % blocks_w;
+                    let by = block_idx / blocks_w;
+                    let flags = block.flags;
+
+                    let delta_x = if block.mode == MvMode::New {
+                        (i16::from(block.delta_x) + bias_dx).clamp(-128, 127) as i8
+                    } else {
+                        0
+                    };
+                    let delta_y = if block.mode == MvMode::New {
+                        (i16::from(block.delta_y) + bias_dy).clamp(-128, 127) as i8
+                    } else {
+                        0
+                    };
+
+                    let predictors = derive_mv_predictors(
+                        &mvs,
+                        self.prev_mvs.as_deref(),
+                        blocks_w,
+                        blocks_h,
+                        bx,
+                        by,
+                    );
+
+                    let neigh = gather_mv_neighbor_set(
+                        &mvs,
+                        self.prev_mvs.as_deref(),
+                        blocks_w,
+                        blocks_h,
+                        bx,
+                        by,
+                    );
+
+                    let (base_dx, base_dy, base_sub_x, base_sub_y) = match block.mode {
+                        MvMode::Zero => (0, 0, 0, 0),
+                        MvMode::Nearest => predictors.nearest,
+                        MvMode::Near => predictors.near,
+                        MvMode::TopRight => neigh.top_right.unwrap_or(predictors.nearest),
+                        MvMode::TopLeft => neigh.top_left.unwrap_or(predictors.nearest),
+                        MvMode::Temporal => predictors.temporal,
+                        MvMode::New => match block.new_base {
+                            0 => predictors.nearest,
+                            1 => predictors.near,
+                            2 => neigh.top_right.unwrap_or(predictors.nearest),
+                            3 => neigh.top_left.unwrap_or(predictors.nearest),
+                            4 => predictors.temporal,
+                            _ => predictors.nearest,
+                        },
+                    };
+
+                    let dx = (base_dx as i16 + delta_x as i16).clamp(-128, 127) as i8;
+                    let dy = (base_dy as i16 + delta_y as i16).clamp(-128, 127) as i8;
+
+                    let mark_skip = (flags & 0x40) != 0;
+
+                    let mv = if block.mode == MvMode::New {
+                        MotionVector::from_raw(dx, dy, flags)
+                    } else {
+                        MotionVector::new(dx, dy, base_sub_x, base_sub_y, mark_skip)
+                    };
+
+                    mvs.push(mv);
+                    skip_mask.push(mark_skip);
+                }
+
+                let predicted = build_predicted(prev, storage_w, storage_h, &mvs);
+                let curr = ResidualDecoder::decode_inter(InterResidualDecodeParams {
+                    predicted_yuv: &predicted,
+                    storage_width: self.header.storage_width,
+                    storage_height: self.header.storage_height,
+                    skip_mask: &skip_mask,
+                    residual_data: &residual_yuv420,
+                    inter_quality: quality,
+                    skip_residuals: self.skip_residuals,
+                })
+                .map_err(|e| {
+                    DecodeError::InvalidFrame(format!("Inter residual decode error: {e}"))
+                })?;
+                self.prev_recon_yuv = Some(curr.clone());
+                self.prev_mvs = Some(mvs.clone());
+                curr
+            }
+        };
+
+        // increment index and return without RGB conversion
+        let frame_type = FrameType::from_u8(head9[8])
+            .ok_or_else(|| DecodeError::InvalidFrame("Bad frame_type".into()))?;
+        self.current_frame += 1;
+        Ok((frame_type, timestamp_ms, storage_yuv))
+    }
+
+
     /// Get the video header
     pub fn header(&self) -> &VideoHeader {
         &self.header
@@ -373,6 +595,13 @@ impl<R: VideoReader> Decoder<R> {
     /// Check if there are more frames to decode
     pub fn has_more_frames(&self) -> bool {
         self.current_frame < self.header.frame_count
+    }
+
+    /// Drain and reset per-frame timings (used by null-mode benchmarking)
+    pub fn drain_timings(&mut self) -> DecodePhaseTimings {
+        let t = self.timings;
+        self.timings = DecodePhaseTimings::default();
+        t
     }
 
     /// Set whether to skip residual decoding (return motion-predicted frames only)

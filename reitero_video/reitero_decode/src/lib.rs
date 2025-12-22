@@ -4,7 +4,7 @@ mod decoder;
 mod error;
 mod reader;
 
-pub use decoder::{DecodedFrame, Decoder};
+pub use decoder::{DecodedFrame, Decoder, DecodePhaseTimings};
 pub use error::{DecodeError, Result};
 pub use reader::VideoReader;
 

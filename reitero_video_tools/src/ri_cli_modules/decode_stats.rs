@@ -11,6 +11,13 @@ pub struct DecodeStats {
     target_fps: f64,
     width: u32,
     height: u32,
+    // cumulative timings for attribution (ns)
+    total_read_ns: u64,
+    total_parse_ns: u64,
+    total_mv_ns: u64,
+    total_pred_ns: u64,
+    total_resid_ns: u64,
+    total_rgb_ns: u64,
 }
 
 impl DecodeStats {
@@ -26,6 +33,12 @@ impl DecodeStats {
             target_fps: target_fps as f64,
             width,
             height,
+            total_read_ns: 0,
+            total_parse_ns: 0,
+            total_mv_ns: 0,
+            total_pred_ns: 0,
+            total_resid_ns: 0,
+            total_rgb_ns: 0,
         }
     }
 
@@ -50,6 +63,15 @@ impl DecodeStats {
             self.frame_count, fps, avg_fps, realtime_factor
         );
         std::io::stdout().flush().ok();
+    }
+
+    pub fn add_timings(&mut self, t: reitero_decode::DecodePhaseTimings) {
+        self.total_read_ns += t.read_bits_ns;
+        self.total_parse_ns += t.parse_frame_ns;
+        self.total_mv_ns += t.mv_decode_ns;
+        self.total_pred_ns += t.build_pred_ns;
+        self.total_resid_ns += t.residual_ns;
+        self.total_rgb_ns += t.yuv_to_rgb_ns;
     }
 
     pub fn print_summary(&self) {

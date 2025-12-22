@@ -1,0 +1,8 @@
+RIV SPEED FOCUS (Dec 22, 2025)
+- Breaking format changes allowed (bitstream, headers, MV/residual). No superblocks/partition trees/AV1-style mode bloat.
+- Quality floors (peng.mp4 @ 1920x1280): DSSIM ≤ 0.00460, PSNR-Y ≥ 40.00 dB; Bytes×DSSIM ≤ 15000.
+- Primary goal: Single-thread decode ≥ 45 FPS on Ryzen 9 3900X.
+- Focus: diagnose and eliminate decoder hotspots (MC, residual decode, conversions).
+- RANS only for entropy; allow alternative predictors/filters if they speed up.
+- Process: profiling → change → measure → log to log.txt (timestamp, commit, flags, fps, quality, Bytes×DSSIM, hotspots).
+- Tiebreaker: faster decode wins (with floors upheld).

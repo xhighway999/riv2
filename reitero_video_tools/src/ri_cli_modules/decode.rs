@@ -206,7 +206,9 @@ pub fn decode_video(
     if matches!(mode, DecodeOutputMode::Null) {
         let mut stats = DecodeStats::new(width, height, fps);
         while decoder.has_more_frames() {
-            decoder.decode_frame().context("Failed to decode frame")?;
+            decoder.decode_frame_null().context("Failed to decode frame")?;
+            // accumulate timings for this frame and reset inside decoder
+            stats.add_timings(reitero_decode::Decoder::drain_timings(&mut decoder));
             stats.update();
         }
         stats.print_summary();
