@@ -7,3 +7,4 @@ edition = "2024"
 anyhow = "1.0"
 reitero_decode = { path = "../reitero_video/reitero_decode" }
 reitero_video_common = { path = "../reitero_video/reitero_video_common" }
+reitero_residual = { path = "../reitero_video/reitero_residual" }
