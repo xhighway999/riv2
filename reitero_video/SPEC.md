@@ -292,9 +292,11 @@ For each block (Y: 16×16, U/V: 8×8):
 1. **2D DCT**: Apply 2D Discrete Cosine Transform to the residual block
 2. **Quantization**: Quantize DCT coefficients using uniform quantization step based on `quality`:
    - Quality 100: `quant_step = 1.0` (minimal quantization)
-   - Quality 1: `quant_step = 1000.0` (maximum quantization)
-   - Linear interpolation for values in between: `quant_step = 1.0 + (100 - quality) / 99.0 * 999.0`
+   - Quality 1: `quant_step = 112.0` (maximum quantization in current implementation)
+   - Linear interpolation for values in between: `quant_step = 1.0 + (100 - quality) / 99.0 * 111.0`
    - Quantized coefficient: `round(dct_coeff / quant_step)` (clamped to i16 range: -32768 to 32767)
+
+   Note: The implemented quantization uses a bounded range (1.0..=112.0) rather than the 1..1000 range described previously. This matches the code at `reitero_video/reitero_residual/src/residual.rs` where `WORST_QUALITY_QUANT_STEP = 112.0`.
 3. **Zigzag scan**: Reorder quantized coefficients from 2D (row-major) to 1D zigzag order
 
 ### 5.4 RANS encoding
@@ -446,7 +448,7 @@ Given `prev_recon_rgb` and `curr_storage_rgb`:
 5. **Residual encoding**:
    - Convert `curr_storage_rgb` and `predicted_storage_rgb` to YUV420 planar
    - Compute residual planes: `residual = current_yuv - predicted_yuv` (signed i16)
-   - Create RANS encoder
+   - Create RANS encoder lazily: the implementation avoids instantiating the encoder if all blocks end up skipped or quantize to zeros (in which case `residual_yuv420` will be empty). This avoids emitting an empty RANS header for trivial frames.
    - For each motion block:
      - If skipped (from skip_mask): no RANS data generated, mark as optimized skip
      - Otherwise:
