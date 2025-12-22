@@ -407,11 +407,18 @@ impl<R: VideoReader> Decoder<R> {
         Ok((out_frame_type, timestamp_ms, cropped))
     }
 
-    /// Decode the next frame but stop at storage YUV to avoid RGB conversion/crop (benchmark fast path)
+    /// Decode the next frame but discard the output (null sink).
+    ///
+    /// NOTE: Previously this used a specialized fast path (decode_next_yuv) which
+    /// skipped the RGB conversion and cropping. That meant the null benchmark did
+    /// not exercise the same code path as the normal decoder and missed
+    /// instrumentation. Per request, the null path now uses the same full decode
+    /// path as decode_frame and simply drops the produced frame data.
     pub fn decode_frame_null(&mut self) -> Result<()> {
         // reset per-frame timings
         self.timings = DecodePhaseTimings::default();
-        let (_ft, _ts, _yuv) = self.decode_next_yuv()?;
+        // Use the same full decode path so instrumentation and timings are exercised.
+        let _frame = self.decode_frame()?;
         Ok(())
     }
 

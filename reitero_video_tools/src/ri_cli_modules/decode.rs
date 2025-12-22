@@ -214,6 +214,11 @@ pub fn decode_video(
             stats.update();
         }
         stats.print_summary();
+        if instrument {
+            // Dump instrumentation from any started measures
+            Instrument::dump_to_dir("penginstrument").ok();
+            Instrument::dump_to_stdout();
+        }
         return Ok(());
     }
 
