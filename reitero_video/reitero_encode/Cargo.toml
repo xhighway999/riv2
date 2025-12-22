@@ -1,0 +1,28 @@
+[package]
+name = "reitero_encode"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "reitero_encode"
+crate-type = ["rlib"]
+
+[features]
+default = ["simd"]
+simd = ["wide"]
+bench-luma = []
+threads = ["dep:rayon", "reitero_residual/threads"]
+
+[dependencies]
+thiserror = "1.0"
+reitero_video_common = { path = "../reitero_video_common" }
+reitero_residual = { path = "../reitero_residual" }
+wide = { version = "1.1", optional = true }
+rayon = { version = "1.8", optional = true }
+
+[dev-dependencies]
+criterion = { version = "0.8" }
+
+[[bench]]
+name = "luma_plane"
+harness = false

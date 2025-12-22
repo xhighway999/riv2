@@ -1,0 +1,10 @@
+[package]
+name = "reitero_dct"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wide = "1.1"
+
+[dev-dependencies]
+rand = "0.8"

@@ -1,0 +1,42 @@
+
+cargo-features = ["profile-rustflags"]
+
+[workspace]
+resolver = "3"
+members = ["reitero_video/reitero_decode", "reitero_video/reitero_encode", "reitero_video/reitero_residual", "reitero_video/reitero_video_common", "reitero_video_tools", "reitero_video_quality_test", "reitero_video/reitero_dct"]
+
+[profile.dev]
+opt-level = 1
+
+# Keep the workspace default `release` behavior unchanged, but build `ri-cli`
+# (the `reitero_video_tools` package) as aggressively as possible in release.
+[profile.release.package.reitero_video_tools]
+opt-level = 3
+codegen-units = 1
+strip = "symbols"
+debug = 0
+incremental = false
+
+# Optional "fast" profile for `ri-cli` that additionally uses target-cpu=native.
+# Use via: cargo ri-cli-fast
+[profile.ri_cli_fast]
+inherits = "dev"
+opt-level = 3
+codegen-units = 1
+strip = "none"
+debug = true
+incremental = false
+rustflags = ["-C", "target-cpu=native"]
+
+[profile.overdrive]
+inherits = "release"
+opt-level = 3
+lto = "fat"              # Aggressive Link-Time Optimization
+codegen-units = 1        # Better optimization at the cost of compile time
+panic = "abort"          # Faster code by removing unwinding logic
+incremental = false
+debug = false
+rustflags = ["-C", "target-cpu=native"]
+# This ensures that even your math libraries are optimized for speed
+[profile.overdrive.package."*"]
+opt-level = 3

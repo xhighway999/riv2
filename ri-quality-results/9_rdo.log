@@ -1,0 +1,103 @@
+ri-quality report
+Input: ./peng.mp4
+Frames processed: 60 (limit: 60), resolution: 1920x1280 @ 25 fps
+Settings: intra=85 inter=80 search=12 skip=12 y-only=true per-frame=true
+Encoded size: 2.7 MiB (2796241 bytes, 46604.02 bytes/frame, 0.152 bpp)
+File skip rate: 26.91% blocks (155025 / 576000) — these motion-predicted blocks quantized to zero residual, so no residual bytes were stored for them
+
+=== Quality Metrics ===
+  PSNR-Y mean: 40.36 dB
+  PSNR-RGB mean: n/a dB
+  DSSIM mean: 0.00501
+
+=== Performance ===
+  Encode: total 33074.4 ms (I 92.5 ms / P 32981.9 ms) | 1.81 fps
+  Decode: total 3718.8 ms (I 22.8 ms / P 3696.1 ms) | 16.13 fps
+
+=== Efficiency Metrics ===
+  Bytes × DSSIM: 14017
+  Bytes per PSNR-Y dB: 69283.17
+  Bytes per PSNR-RGB dB: n/a
+  Encode quality throughput (dB·fps): 73.22
+  Decode quality throughput (dB·fps): 651.16
+
+=== Data Breakdown ===
+  Motion vectors: raw 1.9 MiB -> compressed 793.1 KiB (ratio 2.48:1), 29.0% of file
+  Residuals total: 1.9 MiB (70.9% of file)
+    I-frame JPEG: 451.6 KiB (16.5% of file)
+    P-frame residual: 1.4 MiB (54.4% of file)
+    Residual raw 294.3 MiB -> compressed 1.4 MiB (ratio 202.95:1)
+
+=== Block Stats ===
+  Skip rate: 26.91% (155025 / 576000)
+  MV zero-delta: 18.46% (106319 / 576000)
+
+=== Motion-Vector Diagnostics ===
+  Mode split: Zero 1.0% (5611 blocks) | Nearest 10.6% (58810 blocks) | Near 7.5% (41898 blocks) | New 80.9% (450481 blocks)
+  Predictor richness: avg 4.39 unique/block (min 1 max 5)
+  NEW zero share: pre 0.0% → post 0.0% | axis-zero X 12.7% Y 10.7% | NEAR ref 46.0%
+  NEW delta magnitude: mean 5.26px, stddev 4.77px (450481 blocks)
+  Magnitude classes (per-axis): C0:23.5% | C1:26.6% | C2:20.8% | C3:16.5% | C4:10.9% | C5:1.7%
+  Bias (Δx, Δy): avg (0.0, 0.0) | dx range 0..0 | dy range 0..0
+
+=== Per-frame breakdown ===
+#0000 [I] psnrY=48.66 psnrRGB=n/a dssim=0.00042 enc=48.73 ms dec=10.91 ms size=220.3 KiB mv=0 B (raw 0 B) res=220.3 KiB (raw -) skip=0.0% mv0=0.0% cand=- new0=- bias=(0,0) modes=-
+#0001 [P] psnrY=41.90 psnrRGB=n/a dssim=0.00277 enc=510.78 ms dec=50.22 ms size=34.3 KiB mv=12.5 KiB (raw 31.8 KiB) res=21.8 KiB (raw 3.4 MiB) skip=51.3% mv0=30.2% cand=3.29 new0=0.0%→0.0% bias=(0,0) modes=Z2%/Nr17%/Na12%/Nw70%
+#0002 [P] psnrY=41.44 psnrRGB=n/a dssim=0.00338 enc=533.42 ms dec=52.34 ms size=28.6 KiB mv=12.9 KiB (raw 32.2 KiB) res=15.7 KiB (raw 4.0 MiB) skip=43.8% mv0=28.4% cand=4.24 new0=0.0%→0.0% bias=(0,0) modes=Z2%/Nr16%/Na11%/Nw72%
+#0003 [P] psnrY=40.98 psnrRGB=n/a dssim=0.00359 enc=542.78 ms dec=55.98 ms size=29.3 KiB mv=13.2 KiB (raw 32.6 KiB) res=16.1 KiB (raw 4.3 MiB) skip=39.4% mv0=26.1% cand=4.26 new0=0.0%→0.0% bias=(0,0) modes=Z2%/Nr14%/Na10%/Nw74%
+#0004 [P] psnrY=40.89 psnrRGB=n/a dssim=0.00383 enc=553.82 ms dec=87.23 ms size=30.3 KiB mv=13.4 KiB (raw 33.2 KiB) res=16.9 KiB (raw 4.5 MiB) skip=36.5% mv0=23.0% cand=4.37 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr12%/Na10%/Nw77%
+#0005 [P] psnrY=40.48 psnrRGB=n/a dssim=0.00406 enc=565.02 ms dec=59.83 ms size=35.2 KiB mv=13.8 KiB (raw 34.2 KiB) res=21.3 KiB (raw 4.8 MiB) skip=32.3% mv0=17.6% cand=4.48 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr9%/Na7%/Nw82%
+#0006 [P] psnrY=39.55 psnrRGB=n/a dssim=0.00523 enc=571.90 ms dec=71.47 ms size=58.2 KiB mv=13.8 KiB (raw 33.6 KiB) res=44.3 KiB (raw 6.2 MiB) skip=11.3% mv0=20.6% cand=4.43 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr12%/Na8%/Nw79%
+#0007 [P] psnrY=39.69 psnrRGB=n/a dssim=0.00528 enc=561.04 ms dec=69.60 ms size=42.5 KiB mv=13.7 KiB (raw 34.3 KiB) res=28.8 KiB (raw 5.5 MiB) skip=21.7% mv0=17.2% cand=4.48 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr9%/Na7%/Nw83%
+#0008 [P] psnrY=39.68 psnrRGB=n/a dssim=0.00553 enc=561.17 ms dec=66.60 ms size=45.4 KiB mv=13.5 KiB (raw 33.8 KiB) res=31.9 KiB (raw 5.8 MiB) skip=17.6% mv0=19.9% cand=4.37 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr11%/Na8%/Nw80%
+#0009 [P] psnrY=39.78 psnrRGB=n/a dssim=0.00568 enc=566.24 ms dec=69.99 ms size=43.3 KiB mv=13.7 KiB (raw 34.1 KiB) res=29.6 KiB (raw 5.8 MiB) skip=18.2% mv0=18.0% cand=4.41 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na7%/Nw82%
+#0010 [P] psnrY=39.65 psnrRGB=n/a dssim=0.00554 enc=568.41 ms dec=65.75 ms size=43.4 KiB mv=13.7 KiB (raw 34.1 KiB) res=29.8 KiB (raw 5.7 MiB) skip=19.2% mv0=17.9% cand=4.42 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na7%/Nw82%
+#0011 [P] psnrY=39.32 psnrRGB=n/a dssim=0.00605 enc=581.66 ms dec=72.96 ms size=54.7 KiB mv=14.0 KiB (raw 34.1 KiB) res=40.7 KiB (raw 5.9 MiB) skip=15.7% mv0=18.0% cand=4.44 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na7%/Nw82%
+#0012 [P] psnrY=39.56 psnrRGB=n/a dssim=0.00562 enc=565.43 ms dec=63.43 ms size=38.5 KiB mv=13.6 KiB (raw 33.9 KiB) res=24.9 KiB (raw 5.4 MiB) skip=22.7% mv0=19.3% cand=4.43 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na8%/Nw81%
+#0013 [P] psnrY=39.76 psnrRGB=n/a dssim=0.00519 enc=565.02 ms dec=62.17 ms size=35.6 KiB mv=13.6 KiB (raw 33.9 KiB) res=22.0 KiB (raw 5.3 MiB) skip=25.0% mv0=19.1% cand=4.40 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na8%/Nw81%
+#0014 [P] psnrY=39.92 psnrRGB=n/a dssim=0.00506 enc=562.72 ms dec=61.09 ms size=34.4 KiB mv=13.6 KiB (raw 33.9 KiB) res=20.8 KiB (raw 5.0 MiB) skip=28.3% mv0=19.3% cand=4.43 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na8%/Nw81%
+#0015 [P] psnrY=39.96 psnrRGB=n/a dssim=0.00495 enc=565.89 ms dec=63.57 ms size=37.0 KiB mv=13.8 KiB (raw 34.4 KiB) res=23.2 KiB (raw 5.2 MiB) skip=26.1% mv0=16.4% cand=4.51 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr9%/Na7%/Nw84%
+#0016 [P] psnrY=39.43 psnrRGB=n/a dssim=0.00560 enc=580.53 ms dec=67.69 ms size=53.0 KiB mv=14.2 KiB (raw 34.7 KiB) res=38.8 KiB (raw 5.9 MiB) skip=15.4% mv0=15.1% cand=4.56 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr8%/Na6%/Nw85%
+#0017 [P] psnrY=39.66 psnrRGB=n/a dssim=0.00538 enc=571.05 ms dec=62.48 ms size=37.0 KiB mv=13.6 KiB (raw 34.4 KiB) res=23.4 KiB (raw 5.3 MiB) skip=25.2% mv0=16.6% cand=4.52 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr9%/Na7%/Nw83%
+#0018 [P] psnrY=39.78 psnrRGB=n/a dssim=0.00525 enc=572.45 ms dec=66.66 ms size=39.2 KiB mv=13.6 KiB (raw 34.6 KiB) res=25.6 KiB (raw 5.3 MiB) skip=24.0% mv0=15.2% cand=4.52 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr8%/Na7%/Nw85%
+#0019 [P] psnrY=39.84 psnrRGB=n/a dssim=0.00527 enc=568.33 ms dec=65.22 ms size=39.5 KiB mv=13.7 KiB (raw 34.7 KiB) res=25.8 KiB (raw 5.6 MiB) skip=20.7% mv0=14.8% cand=4.54 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr8%/Na6%/Nw85%
+#0020 [P] psnrY=39.65 psnrRGB=n/a dssim=0.00520 enc=567.73 ms dec=65.45 ms size=39.8 KiB mv=13.6 KiB (raw 34.7 KiB) res=26.1 KiB (raw 5.6 MiB) skip=19.8% mv0=15.2% cand=4.51 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr8%/Na6%/Nw85%
+#0021 [P] psnrY=39.35 psnrRGB=n/a dssim=0.00619 enc=582.32 ms dec=69.09 ms size=60.2 KiB mv=14.0 KiB (raw 34.1 KiB) res=46.2 KiB (raw 6.2 MiB) skip=11.2% mv0=18.0% cand=4.49 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na7%/Nw82%
+#0022 [P] psnrY=39.72 psnrRGB=n/a dssim=0.00586 enc=572.31 ms dec=63.98 ms size=39.2 KiB mv=13.5 KiB (raw 34.0 KiB) res=25.7 KiB (raw 5.5 MiB) skip=21.1% mv0=18.9% cand=4.44 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr11%/Na7%/Nw81%
+#0023 [P] psnrY=39.70 psnrRGB=n/a dssim=0.00551 enc=563.71 ms dec=65.19 ms size=39.3 KiB mv=13.0 KiB (raw 33.8 KiB) res=26.3 KiB (raw 5.5 MiB) skip=22.1% mv0=19.8% cand=4.37 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr11%/Na8%/Nw80%
+#0024 [P] psnrY=39.88 psnrRGB=n/a dssim=0.00539 enc=562.29 ms dec=64.27 ms size=38.5 KiB mv=13.2 KiB (raw 34.1 KiB) res=25.3 KiB (raw 5.5 MiB) skip=22.2% mv0=18.2% cand=4.40 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr11%/Na7%/Nw82%
+#0025 [P] psnrY=39.71 psnrRGB=n/a dssim=0.00521 enc=564.50 ms dec=72.66 ms size=39.7 KiB mv=13.4 KiB (raw 34.5 KiB) res=26.3 KiB (raw 5.5 MiB) skip=21.8% mv0=15.9% cand=4.46 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr9%/Na7%/Nw84%
+#0026 [P] psnrY=39.33 psnrRGB=n/a dssim=0.00549 enc=571.57 ms dec=67.65 ms size=51.9 KiB mv=13.6 KiB (raw 34.1 KiB) res=38.3 KiB (raw 5.8 MiB) skip=17.0% mv0=18.3% cand=4.47 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na7%/Nw82%
+#0027 [P] psnrY=39.58 psnrRGB=n/a dssim=0.00533 enc=568.87 ms dec=63.10 ms size=37.3 KiB mv=13.5 KiB (raw 34.7 KiB) res=23.7 KiB (raw 5.4 MiB) skip=23.2% mv0=14.9% cand=4.57 new0=0.0%→0.0% bias=(0,0) modes=Z0%/Nr8%/Na7%/Nw85%
+#0028 [P] psnrY=39.62 psnrRGB=n/a dssim=0.00530 enc=568.01 ms dec=63.08 ms size=38.7 KiB mv=13.4 KiB (raw 34.5 KiB) res=25.2 KiB (raw 5.4 MiB) skip=22.8% mv0=16.0% cand=4.53 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr9%/Na7%/Nw84%
+#0029 [P] psnrY=39.64 psnrRGB=n/a dssim=0.00541 enc=569.52 ms dec=65.00 ms size=39.0 KiB mv=13.2 KiB (raw 34.0 KiB) res=25.8 KiB (raw 5.6 MiB) skip=20.4% mv0=18.8% cand=4.46 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na8%/Nw81%
+#0030 [I] psnrY=48.17 psnrRGB=n/a dssim=0.00046 enc=43.77 ms dec=11.85 ms size=231.3 KiB mv=0 B (raw 0 B) res=231.3 KiB (raw -) skip=0.0% mv0=0.0% cand=- new0=- bias=(0,0) modes=-
+#0031 [P] psnrY=40.14 psnrRGB=n/a dssim=0.00451 enc=560.01 ms dec=66.79 ms size=59.0 KiB mv=13.9 KiB (raw 33.2 KiB) res=45.1 KiB (raw 6.1 MiB) skip=13.9% mv0=22.7% cand=3.42 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr14%/Na8%/Nw77%
+#0032 [P] psnrY=40.15 psnrRGB=n/a dssim=0.00452 enc=556.80 ms dec=95.16 ms size=38.8 KiB mv=13.9 KiB (raw 34.6 KiB) res=24.8 KiB (raw 4.9 MiB) skip=30.4% mv0=15.4% cand=4.55 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr8%/Na6%/Nw85%
+#0033 [P] psnrY=39.78 psnrRGB=n/a dssim=0.00462 enc=560.64 ms dec=64.61 ms size=41.4 KiB mv=13.9 KiB (raw 34.5 KiB) res=27.4 KiB (raw 5.2 MiB) skip=25.9% mv0=16.0% cand=4.50 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr9%/Na7%/Nw84%
+#0034 [P] psnrY=39.97 psnrRGB=n/a dssim=0.00481 enc=552.75 ms dec=70.56 ms size=37.6 KiB mv=13.4 KiB (raw 33.6 KiB) res=24.1 KiB (raw 4.9 MiB) skip=29.8% mv0=20.9% cand=4.36 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr12%/Na8%/Nw79%
+#0035 [P] psnrY=39.87 psnrRGB=n/a dssim=0.00511 enc=555.24 ms dec=61.94 ms size=41.2 KiB mv=13.4 KiB (raw 33.3 KiB) res=27.8 KiB (raw 5.4 MiB) skip=23.6% mv0=22.2% cand=4.30 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr13%/Na8%/Nw78%
+#0036 [P] psnrY=39.38 psnrRGB=n/a dssim=0.00586 enc=581.73 ms dec=70.23 ms size=60.0 KiB mv=13.9 KiB (raw 33.9 KiB) res=46.1 KiB (raw 6.4 MiB) skip=9.3% mv0=19.2% cand=4.43 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr11%/Na7%/Nw81%
+#0037 [P] psnrY=39.58 psnrRGB=n/a dssim=0.00569 enc=564.18 ms dec=64.64 ms size=41.7 KiB mv=13.7 KiB (raw 34.4 KiB) res=28.0 KiB (raw 5.5 MiB) skip=22.2% mv0=16.3% cand=4.50 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr9%/Na7%/Nw84%
+#0038 [P] psnrY=39.71 psnrRGB=n/a dssim=0.00540 enc=566.53 ms dec=65.47 ms size=42.2 KiB mv=13.5 KiB (raw 34.2 KiB) res=28.7 KiB (raw 5.5 MiB) skip=21.2% mv0=17.8% cand=4.42 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na7%/Nw82%
+#0039 [P] psnrY=39.62 psnrRGB=n/a dssim=0.00557 enc=562.42 ms dec=64.18 ms size=42.3 KiB mv=13.6 KiB (raw 34.2 KiB) res=28.7 KiB (raw 5.6 MiB) skip=20.9% mv0=17.6% cand=4.43 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na7%/Nw82%
+#0040 [P] psnrY=39.67 psnrRGB=n/a dssim=0.00532 enc=561.49 ms dec=63.02 ms size=40.7 KiB mv=13.4 KiB (raw 34.1 KiB) res=27.3 KiB (raw 5.4 MiB) skip=22.6% mv0=18.1% cand=4.42 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr9%/Na8%/Nw82%
+#0041 [P] psnrY=39.19 psnrRGB=n/a dssim=0.00643 enc=564.60 ms dec=68.76 ms size=59.5 KiB mv=13.4 KiB (raw 33.3 KiB) res=46.0 KiB (raw 6.2 MiB) skip=12.0% mv0=22.1% cand=4.36 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr13%/Na8%/Nw78%
+#0042 [P] psnrY=39.59 psnrRGB=n/a dssim=0.00595 enc=578.26 ms dec=63.66 ms size=37.9 KiB mv=13.5 KiB (raw 34.5 KiB) res=24.3 KiB (raw 5.4 MiB) skip=22.6% mv0=16.0% cand=4.54 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr8%/Na7%/Nw84%
+#0043 [P] psnrY=39.77 psnrRGB=n/a dssim=0.00546 enc=571.16 ms dec=62.09 ms size=35.3 KiB mv=13.2 KiB (raw 33.9 KiB) res=22.0 KiB (raw 5.2 MiB) skip=25.6% mv0=19.1% cand=4.42 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na8%/Nw81%
+#0044 [P] psnrY=39.92 psnrRGB=n/a dssim=0.00532 enc=566.16 ms dec=60.88 ms size=33.6 KiB mv=13.0 KiB (raw 33.8 KiB) res=20.6 KiB (raw 5.1 MiB) skip=27.0% mv0=19.9% cand=4.41 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr11%/Na9%/Nw80%
+#0045 [P] psnrY=39.92 psnrRGB=n/a dssim=0.00503 enc=567.73 ms dec=64.62 ms size=34.8 KiB mv=13.1 KiB (raw 33.9 KiB) res=21.6 KiB (raw 5.1 MiB) skip=27.0% mv0=19.3% cand=4.42 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na8%/Nw81%
+#0046 [P] psnrY=38.38 psnrRGB=n/a dssim=0.00888 enc=615.09 ms dec=78.10 ms size=102.6 KiB mv=13.7 KiB (raw 33.1 KiB) res=88.9 KiB (raw 7.0 MiB) skip=0.0% mv0=23.5% cand=4.37 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr15%/Na8%/Nw76%
+#0047 [P] psnrY=39.74 psnrRGB=n/a dssim=0.00648 enc=589.90 ms dec=54.37 ms size=25.2 KiB mv=14.3 KiB (raw 34.2 KiB) res=10.8 KiB (raw 3.7 MiB) skip=47.5% mv0=17.6% cand=4.51 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na6%/Nw82%
+#0048 [P] psnrY=40.47 psnrRGB=n/a dssim=0.00533 enc=588.92 ms dec=52.19 ms size=24.9 KiB mv=14.2 KiB (raw 34.0 KiB) res=10.6 KiB (raw 3.6 MiB) skip=48.2% mv0=18.4% cand=4.37 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na7%/Nw82%
+#0049 [P] psnrY=40.70 psnrRGB=n/a dssim=0.00499 enc=587.64 ms dec=56.18 ms size=28.3 KiB mv=14.3 KiB (raw 34.4 KiB) res=13.9 KiB (raw 3.8 MiB) skip=45.6% mv0=16.7% cand=4.52 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr9%/Na7%/Nw83%
+#0050 [P] psnrY=40.99 psnrRGB=n/a dssim=0.00474 enc=584.31 ms dec=58.96 ms size=25.2 KiB mv=14.1 KiB (raw 33.9 KiB) res=11.1 KiB (raw 3.9 MiB) skip=45.1% mv0=19.1% cand=4.44 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr11%/Na7%/Nw81%
+#0051 [P] psnrY=41.13 psnrRGB=n/a dssim=0.00459 enc=583.34 ms dec=57.41 ms size=25.8 KiB mv=14.1 KiB (raw 33.9 KiB) res=11.6 KiB (raw 3.9 MiB) skip=45.1% mv0=19.1% cand=4.30 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr11%/Na7%/Nw81%
+#0052 [P] psnrY=41.06 psnrRGB=n/a dssim=0.00467 enc=580.75 ms dec=60.63 ms size=26.8 KiB mv=14.2 KiB (raw 33.8 KiB) res=12.6 KiB (raw 4.0 MiB) skip=42.6% mv0=19.5% cand=4.29 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr11%/Na8%/Nw80%
+#0053 [P] psnrY=41.24 psnrRGB=n/a dssim=0.00455 enc=576.04 ms dec=51.99 ms size=25.5 KiB mv=14.1 KiB (raw 33.6 KiB) res=11.5 KiB (raw 3.7 MiB) skip=47.4% mv0=20.7% cand=4.27 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr11%/Na8%/Nw79%
+#0054 [P] psnrY=41.15 psnrRGB=n/a dssim=0.00460 enc=579.24 ms dec=54.05 ms size=29.9 KiB mv=14.3 KiB (raw 33.9 KiB) res=15.6 KiB (raw 4.1 MiB) skip=42.0% mv0=19.3% cand=4.45 new0=0.0%→0.0% bias=(0,0) modes=Z1%/Nr10%/Na8%/Nw81%
+#0055 [P] psnrY=41.17 psnrRGB=n/a dssim=0.00463 enc=576.95 ms dec=53.09 ms size=26.9 KiB mv=14.2 KiB (raw 33.7 KiB) res=12.7 KiB (raw 3.8 MiB) skip=45.3% mv0=20.2% cand=4.42 new0=0.0%→0.0% bias=(0,0) modes=Z2%/Nr11%/Na7%/Nw80%
+#0056 [P] psnrY=41.27 psnrRGB=n/a dssim=0.00462 enc=576.20 ms dec=58.42 ms size=26.6 KiB mv=14.1 KiB (raw 33.6 KiB) res=12.4 KiB (raw 3.9 MiB) skip=44.5% mv0=21.0% cand=4.28 new0=0.0%→0.0% bias=(0,0) modes=Z2%/Nr12%/Na8%/Nw79%
+#0057 [P] psnrY=41.31 psnrRGB=n/a dssim=0.00465 enc=574.13 ms dec=52.84 ms size=26.4 KiB mv=14.1 KiB (raw 33.6 KiB) res=12.3 KiB (raw 3.9 MiB) skip=44.2% mv0=21.0% cand=4.31 new0=0.0%→0.0% bias=(0,0) modes=Z2%/Nr11%/Na8%/Nw79%
+#0058 [P] psnrY=41.24 psnrRGB=n/a dssim=0.00458 enc=574.16 ms dec=53.72 ms size=26.5 KiB mv=14.1 KiB (raw 33.5 KiB) res=12.4 KiB (raw 3.8 MiB) skip=45.3% mv0=21.4% cand=4.25 new0=0.0%→0.0% bias=(0,0) modes=Z2%/Nr12%/Na8%/Nw79%
+#0059 [P] psnrY=41.21 psnrRGB=n/a dssim=0.00484 enc=566.99 ms dec=53.75 ms size=29.6 KiB mv=14.1 KiB (raw 33.6 KiB) res=15.5 KiB (raw 4.1 MiB) skip=42.1% mv0=20.6% cand=4.41 new0=0.0%→0.0% bias=(0,0) modes=Z2%/Nr11%/Na8%/Nw79%

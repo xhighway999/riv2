@@ -1,0 +1,29 @@
+[package]
+name = "reitero_residual"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "reitero_residual"
+crate-type = ["rlib"]
+
+[features]
+default = ["simd"]
+simd = ["wide"]
+threads = ["dep:rayon"]
+
+[dependencies]
+thiserror = "1.0"
+jpeg-encoder = "0.6"
+jpeg-decoder = "0.3"
+yuv = "0.8"
+rustdct = "0.7"
+reitero_dct = { path = "../reitero_dct" }
+cabac = "0.15"
+rayon = { version = "1.8", optional = true }
+reitero_video_common = { path = "../reitero_video_common" }
+wide = { version = "1.1", optional = true }
+
+[dev-dependencies]
+rand = "0.8"
+
