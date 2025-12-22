@@ -370,6 +370,9 @@ impl<R: VideoReader> Decoder<R> {
                 .map_err(|e| {
                     DecodeError::InvalidFrame(format!("Inter residual decode error: {e}"))
                 })?;
+                // Pull in-process residual-phase counters and attribute to global timings
+                let (rns, dns, dyns, duvns, ans) = reitero_residual::drain_residual_phase_counters();
+                self.timings.residual_ns += rns + dns + dyns + duvns + ans;
                 self.prev_recon_yuv = Some(curr.clone());
                 // Store current MVs as temporal reference for next inter frame
                 self.prev_mvs = Some(mvs.clone());
