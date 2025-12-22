@@ -17,5 +17,5 @@ pub use mv_rans::{MvCodedBlock, MvRansDecoder, MvRansEncoder, mv_class_from_magn
 pub use residual::{
     InterResidualDecodeParams, InterResidualEncodeParams, InterResidualEncodeResult,
     IntraResidualEncodeResult, ResidualDecoder, ResidualEncoder, ResidualError,
-    RleCompressionStats,
+    RleCompressionStats, drain_residual_phase_counters,
 };
