@@ -9,6 +9,7 @@ use reitero_video_common::PackedFrame;
 use reitero_video_common::VideoHeader;
 use reitero_video_common::{MotionVector, Yuv420Frame, build_predicted};
 use reitero_video_common::{PackedFrameData, RIV_VERSION};
+use std::time::Instant;
 
 fn crop_rgb24(
     storage: &[u8],
@@ -270,6 +271,7 @@ impl<R: VideoReader> Decoder<R> {
                 let num_blocks = blocks_w * blocks_h;
 
                 // Consume per-frame data (decoder contexts persist)
+                let t_mv0 = Instant::now();
                 self.mv_rans_decoder.consume_frame(&mv_deflate);
                 let mv_blocks = self.mv_rans_decoder.decode_frame(blocks_w, blocks_h);
 
@@ -348,11 +350,14 @@ impl<R: VideoReader> Decoder<R> {
                     mvs.push(mv);
                     skip_mask.push(mark_skip);
                 }
+                self.timings.mv_decode_ns += t_mv0.elapsed().as_nanos() as u64;
 
                 // Residual data is RANS-compressed directly (no DEFLATE decompression needed)
                 let residual_data = &residual_yuv420;
 
+                let t_pred0 = Instant::now();
                 let predicted = build_predicted(prev, storage_w, storage_h, &mvs[..]);
+                self.timings.build_pred_ns += t_pred0.elapsed().as_nanos() as u64;
                 let curr = ResidualDecoder::decode_inter(InterResidualDecodeParams {
                     predicted_yuv: &predicted,
                     storage_width: self.header.storage_width,
@@ -372,16 +377,20 @@ impl<R: VideoReader> Decoder<R> {
             }
         };
 
+        let t_rgb0 = Instant::now();
         let storage_rgb = storage_yuv.to_rgb24().map_err(|e| {
             DecodeError::InvalidFrame(format!("storage yuv→rgb conversion failed: {e}"))
         })?;
+        self.timings.yuv_to_rgb_ns += t_rgb0.elapsed().as_nanos() as u64;
 
+        let t_crop0 = Instant::now();
         let cropped = crop_rgb24(
             &storage_rgb,
             storage_w,
             self.header.display_width as usize,
             self.header.display_height as usize,
         );
+        self.timings.parse_frame_ns += t_crop0.elapsed().as_nanos() as u64; // attribute crop time to parse
         Ok((out_frame_type, timestamp_ms, cropped))
     }
 
@@ -400,6 +409,7 @@ impl<R: VideoReader> Decoder<R> {
         }
 
         // Read timestamp + type first.
+        let t_read0 = Instant::now();
         let mut head9 = [0u8; 9];
         read_exact(&mut self._reader, &mut head9)?;
         let timestamp_ms = u64::from_le_bytes([
@@ -448,9 +458,12 @@ impl<R: VideoReader> Decoder<R> {
                 buf.extend_from_slice(&payload);
             }
         }
+        self.timings.read_bits_ns += t_read0.elapsed().as_nanos() as u64;
 
+        let t_parse0 = Instant::now();
         let (packed, _) = PackedFrame::from_bytes(&buf)
             .ok_or_else(|| DecodeError::DecodingFailed("Failed to parse packed frame (v2)".into()))?;
+        self.timings.parse_frame_ns += t_parse0.elapsed().as_nanos() as u64;
 
         let storage_w = self.header.storage_width as usize;
         let storage_h = self.header.storage_height as usize;
