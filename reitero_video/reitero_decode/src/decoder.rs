@@ -271,9 +271,13 @@ impl<R: VideoReader> Decoder<R> {
                 let num_blocks = blocks_w * blocks_h;
 
                 // Consume per-frame data (decoder contexts persist)
+                // Instrument: mv_decode start
+                reitero_video_common::Instrument::start_measure("mv_decode");
                 let t_mv0 = Instant::now();
                 self.mv_rans_decoder.consume_frame(&mv_deflate);
+                reitero_video_common::Instrument::start_measure("rans_consume");
                 let mv_blocks = self.mv_rans_decoder.decode_frame(blocks_w, blocks_h);
+                reitero_video_common::Instrument::stop_measure("rans_consume");
 
                 // Reconstruct motion vectors from structured blocks
                 if self.mvs_scratch.len() < num_blocks { self.mvs_scratch.resize(num_blocks, MotionVector::from_raw(0,0,0)); }

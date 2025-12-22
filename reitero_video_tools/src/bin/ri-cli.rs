@@ -61,6 +61,9 @@ enum Command {
         /// Skip residual decoding (output motion-predicted frames only)
         #[arg(long)]
         skip_residuals: bool,
+        /// Enable instrumentation output
+        #[arg(long)]
+        instrument: bool,
     },
     /// Extract the Nth frame from a .riv file into ./reconstructed/frame_N/
     ExtractFrame {

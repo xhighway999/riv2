@@ -174,6 +174,7 @@ pub fn decode_video(
     output: Option<&str>,
     mode: DecodeOutputMode,
     skip_residuals: bool,
+    instrument: bool,
 ) -> Result<()> {
     match mode {
         DecodeOutputMode::File => println!(

@@ -1,0 +1,21 @@
+--- RUN 3 ---
+Video: 1920x1280 @ 25 fps, 100 frames
+.. 25 frames, inst 19.18 FPS
+.. 50 frames, inst 18.60 FPS
+.. 75 frames, inst 22.68 FPS
+.. 100 frames, inst 21.10 FPS
+
+=== Null Decode Summary ===
+Frames: 100 time: 4.93s avg: 20.26 FPS
+read_bits:        3021101 ns (  0.1%)
+parse_frame:       287669 ns (  0.0%)
+mv_decode:              0 ns (  0.0%)
+build_pred:             0 ns (  0.0%)
+residual:      2418165597 ns ( 49.0%)
+yuv->rgb:               0 ns (  0.0%)
+  residual sub-phases (ns):
+    rans_decode:    435459776 ns (  8.8%)
+    deinterleave:            0 ns (  0.0%)
+    dct_y:           635480131 ns ( 12.9%)
+    dct_uv:          247894003 ns (  5.0%)
+    apply:           339567360 ns (  6.9%)
