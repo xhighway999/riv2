@@ -110,8 +110,15 @@ fn main() -> Result<()> {
             output,
             mode,
             skip_residuals,
+            instrument,
         } => {
-            decode::decode_video(&input, output.as_deref(), mode, skip_residuals)?;
+            decode::decode_video(
+                &input,
+                output.as_deref(),
+                mode,
+                skip_residuals,
+                instrument,
+            )?;
         }
         Command::ExtractFrame { input, index } => {
             let out_dir = riv_extract::extract_frame_to_pwd(Path::new(&input), index)?;
