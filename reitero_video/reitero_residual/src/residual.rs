@@ -709,7 +709,11 @@ impl ResidualDecoder {
         DCT_UV_NS.fetch_add(t_dctuv0.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         // Copy predicted planes to contiguous arrays (matching residual storage format)
-        let (mut recon_y, mut recon_u, mut recon_v) = p.predicted_yuv.clone_planes();
+        let (pred_y, pred_u, pred_v) = p.predicted_yuv.clone_planes();
+        // Convert predicted planes to signed i32 buffers to speed inner-loop arithmetic
+        let mut recon_y_i32: Vec<i32> = pred_y.iter().map(|&v| v as i32).collect();
+        let mut recon_u_i32: Vec<i32> = pred_u.iter().map(|&v| v as i32).collect();
+        let mut recon_v_i32: Vec<i32> = pred_v.iter().map(|&v| v as i32).collect();
 
         // Apply residual in YUV, but force residual=0 on skipped blocks (even if payload isn't neutral).
         // This keeps skip semantics correct.
@@ -730,7 +734,8 @@ impl ResidualDecoder {
                         let x = x0 + xx;
                         let i = row + x;
                         let residual = res_y[i] as i32;
-                        recon_y[i] = (recon_y[i] as i32 + residual).clamp(0, 255) as u8;
+                        let sum = recon_y_i32[i] + residual;
+                        recon_y_i32[i] = if sum < 0 { 0 } else if sum > 255 { 255 } else { sum };
                     }
                 }
                 // U/V planes: 8x8 per 16x16 block
@@ -742,13 +747,20 @@ impl ResidualDecoder {
                         let i = row + x;
                         let ru = res_u[i] as i32;
                         let rv = res_v[i] as i32;
-                        recon_u[i] = (recon_u[i] as i32 + ru).clamp(0, 255) as u8;
-                        recon_v[i] = (recon_v[i] as i32 + rv).clamp(0, 255) as u8;
+                        let su = recon_u_i32[i] + ru;
+                        let sv = recon_v_i32[i] + rv;
+                        recon_u_i32[i] = if su < 0 { 0 } else if su > 255 { 255 } else { su };
+                        recon_v_i32[i] = if sv < 0 { 0 } else if sv > 255 { 255 } else { sv };
                     }
                 }
             }
         }
         APPLY_NS.fetch_add(t_a0.elapsed().as_nanos() as u64, Ordering::Relaxed);
+
+        // Convert recon i32 planes back to u8
+        let recon_y: Vec<u8> = recon_y_i32.iter().map(|&v| v as u8).collect();
+        let recon_u: Vec<u8> = recon_u_i32.iter().map(|&v| v as u8).collect();
+        let recon_v: Vec<u8> = recon_v_i32.iter().map(|&v| v as u8).collect();
 
         // Convert recon YUV planes back to RGB24
         Yuv420Frame::from_planes(storage_w, storage_h, recon_y, recon_u, recon_v)
