@@ -34,3 +34,5 @@ build_pred:             0 ns (  0.0%)
 residual:      5801541400 ns ( 61.3%)
 yuv->rgb:               0 ns (  0.0%)
 Updating apt and installing perf tooling...
+2025-12-22T13:33:48.054774Z System: Linux 6.12.63-1-lts x86_64 Python=3.12.12 Rust toolchain: rustc 1.93.0-nightly (b6d7ff3aa 2025-11-14)
+2025-12-22T13:40:23.012674Z Run release ri_null: avg_fps=18.04 residual_ns=3035568777 dct_y_ns=1140146803 dct_uv_ns=340236720 apply_ns=380692589 rans_ns=431974622
