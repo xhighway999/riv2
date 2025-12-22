@@ -37,6 +37,16 @@ static DCT_Y_NS: AtomicU64 = AtomicU64::new(0);
 static DCT_UV_NS: AtomicU64 = AtomicU64::new(0);
 static APPLY_NS: AtomicU64 = AtomicU64::new(0);
 
+/// Drain and return residual-phase counters (ns). Returns (rans, deinterleave, dct_y, dct_uv, apply)
+pub fn drain_residual_phase_counters() -> (u64, u64, u64, u64, u64) {
+    let r = RANS_DECODE_NS.swap(0, Ordering::Relaxed);
+    let d = DEINTERLEAVE_NS.swap(0, Ordering::Relaxed);
+    let y = DCT_Y_NS.swap(0, Ordering::Relaxed);
+    let uv = DCT_UV_NS.swap(0, Ordering::Relaxed);
+    let a = APPLY_NS.swap(0, Ordering::Relaxed);
+    (r, d, y, uv, a)
+}
+
 #[derive(Debug, Error)]
 pub enum ResidualError {
     #[error("invalid input: {0}")]
