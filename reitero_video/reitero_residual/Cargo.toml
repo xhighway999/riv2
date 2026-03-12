@@ -1,0 +1,33 @@
+[package]
+name = "reitero_residual"
+version = "0.1.1"
+edition = "2024"
+license = "Unlicense OR MIT"
+authors = ["Quentin Kammann"]
+description = "Residual coding for the Reitero video codec - quantization and entropy coding"
+repository = "https://github.com/xhighway999/riv"
+keywords = ["video", "codec", "residual", "entropy", "compression"]
+categories = ["multimedia::video", "algorithms"]
+readme = "README.md"
+
+[lib]
+name = "reitero_residual"
+crate-type = ["rlib"]
+
+[features]
+default = ["simd"]
+simd = ["wide"]
+threads = ["dep:rayon"]
+
+[dependencies]
+chrono = "0.4"
+thiserror = "1.0"
+yuv = "0.8"
+reitero_dct = { path = "../reitero_dct" }
+rayon = { version = "1.8", optional = true }
+reitero_video_common = { path = "../reitero_video_common" }
+wide = { version = "1.1", optional = true }
+
+[dev-dependencies]
+rand = "0.8"
+

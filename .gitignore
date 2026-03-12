@@ -1,0 +1,10 @@
+target/*
+.vscode/*
+.claude/*
+
+
+# Benchmark: downloaded test sequences and encode/decode output
+bench/sequences/
+bench/work/
+bench/image_sequences/
+bench/*.png

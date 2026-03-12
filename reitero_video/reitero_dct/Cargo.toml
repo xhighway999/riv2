@@ -1,0 +1,22 @@
+[package]
+name = "reitero_dct"
+version = "0.1.0"
+edition = "2024"
+license = "Unlicense OR MIT"
+authors = ["Quentin Kammann"]
+description = "Fixed-point 8x8 and 16x16 DCT/IDCT transforms for video coding, with optional SIMD acceleration"
+repository = "https://github.com/xhighway999/riv"
+keywords = ["dct", "video", "codec", "simd", "compression"]
+categories = ["multimedia::video", "algorithms"]
+readme = "README.md"
+
+[dependencies]
+wide = "1.1"
+
+[dev-dependencies]
+rand = "0.8"
+criterion = "0.5"
+
+[[bench]]
+name = "dct_bench"
+harness = false

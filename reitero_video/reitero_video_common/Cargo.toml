@@ -1,0 +1,25 @@
+[package]
+name = "reitero_video_common"
+version = "0.1.1"
+edition = "2024"
+license = "Unlicense OR MIT"
+authors = ["Quentin Kammann"]
+description = "Common types and pixel format utilities for the Reitero video codec"
+repository = "https://github.com/xhighway999/riv"
+keywords = ["video", "codec", "yuv", "reitero", "format"]
+categories = ["multimedia::video"]
+readme = "README.md"
+
+[lib]
+name = "reitero_video_common"
+crate-type = ["rlib"]
+
+[features]
+default = ["simd"]
+simd = ["wide"]
+
+[dependencies]
+chrono = "0.4"
+wide = { version = "1.1", optional = true }
+yuv = "0.8"
+

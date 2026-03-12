@@ -1,0 +1,66 @@
+[
+  {
+    "sequence": "foreman_cif",
+    "codec": "riv2 iq=85 eq=80",
+    "ref_psnr_db": 30.74,
+    "encode_fps": 78.9,
+    "decode_fps": 469.7,
+    "encoded_mb": 0.79
+  },
+  {
+    "sequence": "foreman_cif",
+    "codec": "mpeg1 q=12",
+    "ref_psnr_db": 30.09,
+    "encode_fps": 722.0,
+    "decode_fps": 1604.9,
+    "encoded_mb": 0.7
+  },
+  {
+    "sequence": "foreman_cif",
+    "codec": "mpeg2 q=12",
+    "ref_psnr_db": 30.06,
+    "encode_fps": 719.7,
+    "decode_fps": 1613.1,
+    "encoded_mb": 0.71
+  },
+  {
+    "sequence": "foreman_cif",
+    "codec": "vp9 crf=50",
+    "ref_psnr_db": 30.2,
+    "encode_fps": 30.9,
+    "decode_fps": 1349.7,
+    "encoded_mb": 0.15
+  },
+  {
+    "sequence": "park_joy_1080p50",
+    "codec": "riv2 iq=85 eq=80",
+    "ref_psnr_db": 27.33,
+    "encode_fps": 4.5,
+    "decode_fps": 29.3,
+    "encoded_mb": 61.31
+  },
+  {
+    "sequence": "park_joy_1080p50",
+    "codec": "mpeg1 q=12",
+    "ref_psnr_db": 26.69,
+    "encode_fps": 125.0,
+    "decode_fps": 423.6,
+    "encoded_mb": 50.04
+  },
+  {
+    "sequence": "park_joy_1080p50",
+    "codec": "mpeg2 q=12",
+    "ref_psnr_db": 26.66,
+    "encode_fps": 125.4,
+    "decode_fps": 423.6,
+    "encoded_mb": 50.38
+  },
+  {
+    "sequence": "park_joy_1080p50",
+    "codec": "vp9 crf=45",
+    "ref_psnr_db": 27.01,
+    "encode_fps": 2.2,
+    "decode_fps": 183.1,
+    "encoded_mb": 26.37
+  }
+]
