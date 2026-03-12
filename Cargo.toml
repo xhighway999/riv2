@@ -1,6 +1,4 @@
 
-cargo-features = ["profile-rustflags"]
-
 [workspace]
 resolver = "3"
 members = [
@@ -34,7 +32,6 @@ codegen-units = 1
 strip = "none"
 debug = true
 incremental = false
-rustflags = ["-C", "target-cpu=native"]
 
 [profile.full-opt]
 inherits = "release"
@@ -44,5 +41,4 @@ codegen-units = 1
 panic = "abort"
 incremental = false
 debug = false
-rustflags = ["-C", "target-cpu=native"]
 
