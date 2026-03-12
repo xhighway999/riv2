@@ -1,8 +1,10 @@
-# RIV — Reitero Intermediate Video
+# RIV — ReItero Video
 
 [![License: MIT / Unlicense](https://img.shields.io/badge/license-MIT%20%2F%20Unlicense-blue)](#license)
 [![Rust](https://img.shields.io/badge/rust-stable-orange)](https://www.rust-lang.org)
 [![WASM](https://img.shields.io/badge/target-wasm32--unknown--unknown-green)](https://webassembly.org)
+
+**[Live WASM demo — Big Buck Bunny encoded with RIV](https://coffeecupentertainment.com/static/riv2-player/index.html?bbb.riv)**
 
 A pure-Rust, WASM-compatible video codec. No C FFI. No native dependencies. Just `cargo add`.
 
