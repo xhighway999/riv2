@@ -37,7 +37,7 @@ RIV is a self-contained codec in pure Rust with a single code path for native an
 - **Pure Rust** — no C, no bindgen, no system libraries required
 - **WASM-safe** — compiles to `wasm32-unknown-unknown` out of the box
 - **I + P frame codec** — intra and inter frames with motion-compensated prediction
-- **Fast encoding** — ~80 fps on 352×288, 4–7× faster than VP9 at comparable quality
+- **Fast encoding** — ~80 fps on 352×288, 2× faster than VP9 at comparable quality
 - **RANS entropy coding** — RANS32 with VP8-style adaptive contexts for MVs and residuals
 - **DCT residual coding** — 16×16 luma / 8×8 chroma; JPEG-style intra, adaptive-Q inter
 - **Sub-pixel motion** — ½-pixel bilinear interpolation; hex + diamond search
