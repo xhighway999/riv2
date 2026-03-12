@@ -8,7 +8,7 @@
 
 A pure-Rust, WASM-compatible video codec. No C FFI. No native dependencies. Just `cargo add`.
 
-Built for embedding pre-rendered video (cutscenes, trailers, demos) in Rust/WASM applications — originally developed for the [Repang](https://coffeecupentertainment.com/articles/repang) game engine.
+Built for embedding pre-rendered video (cutscenes, trailers, demos) in Rust/WASM applications — originally developed for the [ReItero](https://coffeecupentertainment.com/articles/repang) game engine.
 
 ---
 
