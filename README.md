@@ -10,6 +10,12 @@ Built for embedding pre-rendered video (cutscenes, trailers, demos) in Rust/WASM
 
 ---
 
+## Talk is cheap, show me the graphs
+
+![Park Joy 1080p50 — Perceived Quality vs Bitrate](docs/ssim_park_joy_1080p50.png)
+
+---
+
 ## Why
 
 Shipping video in a WASM game binary is awkward:
