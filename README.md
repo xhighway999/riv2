@@ -22,9 +22,9 @@ Built for embedding pre-rendered video (cutscenes, trailers, demos) in Rust/WASM
 
 Shipping video in a WASM game binary is awkward:
 
-- `libvpx` / `openh264` — C FFI, messy WASM C stdlib story
-- Browser `VideoDecoder` API — browser-only, requires JS glue, no native fallback
-- Raw H.264 in Rust — patent-encumbered, no pure-Rust encoder
+- `libvpx` / `openh264`: C FFI, messy WASM C stdlib story
+- Browser `VideoDecoder` API: browser-only, requires JS glue, no native fallback
+- Raw H.264 in Rust:  no pure-Rust decoder
 
 RIV is a self-contained codec in pure Rust with a single code path for native and WASM. It is not trying to beat H.264 on compression. It is trying to be **the simplest correct answer** when you need video in a Rust/WASM context.
 
@@ -132,6 +132,7 @@ no I/O or PSNR scoring overhead.
 | VP9     | q=45    | 179 kbps  | 31.58 | 0.886 |
 | MPEG-1  | q=8     | 944 kbps  | 31.89 | 0.883 |
 | MPEG-2  | q=12    | 596 kbps  | 30.06 | 0.844 |
+| DivX    | q=12    | 410 kbps  | 29.39 | 0.828 |
 
 #### Speed at matched quality (~30 dB PSNR)
 
