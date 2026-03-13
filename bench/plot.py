@@ -18,6 +18,7 @@ CODEC_STYLE = {
     "vp9":   ("VP9",     "#4361EE",  1.5,  "--",       "s",    5,   4),
     "mpeg2": ("MPEG-2",  "#F4A261",  1.5,  (0,(5,2)),  "D",    5,   3),
     "mpeg1": ("MPEG-1",  "#2EC4B6",  1.5,  (0,(5,2)),  "^",    5,   3),
+    "divx":  ("DivX",    "#6A4C93",  1.8,  "--",       "v",    5,   4),
 }
 
 # Vertical reference lines: (label, bitrate_kbps)

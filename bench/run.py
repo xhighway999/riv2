@@ -23,12 +23,14 @@ RI_CLI = ["cargo", "run", "--profile", "full-opt", "-p", "reitero_video_tools", 
 CODECS = {
     "mpeg1": {"quality_points": [2, 4, 6, 8, 12, 16, 20, 25]},
     "mpeg2": {"quality_points": [2, 4, 6, 8, 12, 16, 20, 25]},
+    "divx":  {"quality_points": [2, 4, 6, 8, 12, 16, 20, 25]},
     "riv2":  {"quality_points": [(70,65),(75,70),(80,75),(85,80),(90,85),(95,90)]},
     "vp9":   {"quality_points": [15, 20, 25, 30, 35, 40, 45, 50]},
 }
 QUICK_CODECS = {
     "mpeg1": {"quality_points": [4, 8, 16]},
     "mpeg2": {"quality_points": [4, 8, 16]},
+    "divx":  {"quality_points": [4, 8, 16]},
     "riv2":  {"quality_points": [(75,70),(85,80),(95,90)]},
     "vp9":   {"quality_points": [20, 30, 40]},
 }
@@ -177,6 +179,22 @@ def encode_mpeg2(seq_dir: Path, out_dir: Path, fps_rational: str, n_frames: int,
     return elapsed, encoded
 
 
+def encode_divx(seq_dir: Path, out_dir: Path, fps_rational: str, n_frames: int, q: int, dry_run: bool) -> tuple[float, Path]:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    encoded = out_dir / "encoded.avi"
+    cmd = [
+        "ffmpeg", "-y",
+        "-r", fps_rational,
+        "-i", str(seq_dir / "frame_%06d.png"),
+        "-vframes", str(n_frames),
+        "-c:v", "mpeg4", "-q:v", str(q), "-pix_fmt", "yuv420p",
+        "-vtag", "DIVX",
+        str(encoded),
+    ]
+    elapsed, _ = run_cmd(cmd, dry_run, f"divx encode q={q}")
+    return elapsed, encoded
+
+
 def encode_vp9(seq_dir: Path, out_dir: Path, fps_rational: str, n_frames: int, crf: int, dry_run: bool) -> tuple[float, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     encoded = out_dir / "encoded.webm"
@@ -231,6 +249,19 @@ def decode_and_measure_mpeg2(encoded: Path, ref_frames: list[Path], dry_run: boo
         print(f"  [dry-run] mpeg2 decode+measure:\n    {' '.join(cmd)} | <psnr>")
         return 0.0, 0.0, 0.0
     print(f"  mpeg2 decode+measure: {' '.join(cmd)}")
+    t0 = time.monotonic()
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    avg_psnr, avg_ssim, _ = measure_streamed(proc.stdout, ref_frames)
+    proc.wait()
+    return time.monotonic() - t0, avg_psnr, avg_ssim
+
+
+def decode_and_measure_divx(encoded: Path, ref_frames: list[Path], dry_run: bool) -> tuple[float, float, float]:
+    cmd = ["ffmpeg", "-i", str(encoded), "-f", "image2pipe", "-vcodec", "ppm", "pipe:1"]
+    if dry_run:
+        print(f"  [dry-run] divx decode+measure:\n    {' '.join(cmd)} | <psnr>")
+        return 0.0, 0.0, 0.0
+    print(f"  divx decode+measure: {' '.join(cmd)}")
     t0 = time.monotonic()
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     avg_psnr, avg_ssim, _ = measure_streamed(proc.stdout, ref_frames)
@@ -343,6 +374,39 @@ def bench_mpeg2(seq_name: str, seq_dir: Path, meta: dict, quality_points: list[i
         }
 
 
+def bench_divx(seq_name: str, seq_dir: Path, meta: dict, quality_points: list[int], dry_run: bool, results: list[dict]):
+    fps_rational = meta["fps_rational"]
+    n_frames = meta["frame_count"]
+    refs = ref_frame_paths(seq_dir, n_frames)
+    duration_s = n_frames / meta["fps"]
+
+    for q in quality_points:
+        if already_done(results, "divx", q):
+            print(f"\n--- {seq_name} / divx_q{q}: already done, skipping ---")
+            continue
+        out_dir = WORK_DIR / seq_name / f"divx_q{q}"
+        print(f"\n--- {seq_name} / divx_q{q} ---")
+
+        enc_time, encoded = encode_divx(seq_dir, out_dir, fps_rational, n_frames, q, dry_run)
+        dec_time, avg_psnr, avg_ssim = decode_and_measure_divx(encoded, refs, dry_run)
+
+        if dry_run:
+            yield {"sequence": seq_name, "codec": "divx", "quality_param": q, "dry_run": True}
+            continue
+
+        encoded_bytes = encoded.stat().st_size
+        bitrate_kbps = (encoded_bytes * 8) / duration_s / 1000
+        yield {
+            "sequence": seq_name, "codec": "divx", "quality_param": q,
+            "bitrate_kbps": round(bitrate_kbps, 2),
+            "psnr": round(avg_psnr, 4), "ssim": round(avg_ssim, 6),
+            "encode_time_s": round(enc_time, 3), "decode_time_s": round(dec_time, 3),
+            "encode_fps": round(n_frames / enc_time, 2) if enc_time > 0 else None,
+            "decode_fps": round(n_frames / dec_time, 2) if dec_time > 0 else None,
+            "encoded_bytes": encoded_bytes,
+        }
+
+
 def bench_vp9(seq_name: str, seq_dir: Path, meta: dict, quality_points: list[int], dry_run: bool, results: list[dict]):
     fps_rational = meta["fps_rational"]
     n_frames = meta["frame_count"]
@@ -437,6 +501,8 @@ def run_sequence(seq_name: str, codecs: dict, dry_run: bool) -> None:
             gen = bench_mpeg1(seq_name, seq_dir, meta, cfg["quality_points"], dry_run, results)
         elif codec == "mpeg2":
             gen = bench_mpeg2(seq_name, seq_dir, meta, cfg["quality_points"], dry_run, results)
+        elif codec == "divx":
+            gen = bench_divx(seq_name, seq_dir, meta, cfg["quality_points"], dry_run, results)
         elif codec == "riv2":
             gen = bench_riv2(seq_name, seq_dir, meta, cfg["quality_points"], dry_run, results)
         elif codec == "vp9":
