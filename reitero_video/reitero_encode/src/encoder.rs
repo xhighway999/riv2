@@ -6,8 +6,10 @@ use crate::writer::VideoWriter;
 use reitero_residual::{
     InterResidualEncodeParams, MvCodedBlock, MvMode, MvRansEncoder, ResidualEncoder,
     derive_mv_predictors_with_stats, gather_mv_neighbor_set, mv_class_from_magnitude,
+    quant_step_from_quality,
 };
 use reitero_video_common::{FrameType, PackedFrame, VideoHeader, Yuv420Frame, build_predicted};
+use reitero_video_common::{deblock_level_from_quant_step, deblock_yuv420};
 
 /// Raw RGB24 input frame for the encoder.
 ///
@@ -305,7 +307,7 @@ impl<W: VideoWriter> Encoder<W> {
         match frame_type {
             FrameType::Intra => {
                 // Encode I-frame via DCT+RANS on YUV420 (no color-space round-trip).
-                let intra = ResidualEncoder::encode_intra(
+                let mut intra = ResidualEncoder::encode_intra(
                     &curr_yuv,
                     self.config.storage_width,
                     self.config.storage_height,
@@ -314,6 +316,12 @@ impl<W: VideoWriter> Encoder<W> {
                 .map_err(|e| {
                     EncodeError::FrameError(format!("Residual intra encode error: {e}"))
                 })?;
+                // In-loop deblock (v5): keeps the stored reference identical to the
+                // decoder's filtered reconstruction. Every intra block is coded.
+                let deblock_level = deblock_level_from_quant_step(quant_step_from_quality(
+                    self.config.intra_quality,
+                ));
+                deblock_yuv420(&mut intra.recon_yuv, deblock_level, true, None);
                 self.prev_recon_yuv = Some(intra.recon_yuv.clone());
                 let bytes = PackedFrame::new_intra(
                     self.config.intra_quality,
@@ -729,7 +737,7 @@ impl<W: VideoWriter> Encoder<W> {
                 }
                 // Residual atlas encode + self-reconstruction (shared with decoder via reitero_residual).
                 // This generates optimized_skip_mask which is authoritative.
-                let inter = ResidualEncoder::encode_inter(InterResidualEncodeParams {
+                let mut inter = ResidualEncoder::encode_inter(InterResidualEncodeParams {
                     curr_yuv: &curr_yuv,
                     predicted_yuv: &predicted,
                     storage_width: self.config.storage_width,
@@ -816,6 +824,25 @@ impl<W: VideoWriter> Encoder<W> {
                     .mv_rans_encoder
                     .encode_frame_and_get_data(&mv_blocks, blocks_w, blocks_h);
                 let mv_rans_bytes = mv_rans.len();
+
+                // In-loop deblock (v5), mirroring the decoder exactly: skip flags from the
+                // authoritative optimized mask, MV components from the reconstructed
+                // (coded_prefix) field — pure static copies keep their already-filtered pixels.
+                let filter_mask: Vec<bool> = coded_prefix
+                    .iter()
+                    .zip(inter.optimized_skip_mask.iter())
+                    .map(|(mv, &skip)| {
+                        !skip
+                            || mv.dx() != 0
+                            || mv.dy() != 0
+                            || mv.subpixel_x() != 0
+                            || mv.subpixel_y() != 0
+                    })
+                    .collect();
+                let deblock_level = deblock_level_from_quant_step(quant_step_from_quality(
+                    self.config.inter_quality,
+                ));
+                deblock_yuv420(&mut inter.recon_current_yuv, deblock_level, false, Some(&filter_mask));
 
                 self.prev_recon_yuv = Some(inter.recon_current_yuv.clone());
                 // Store reconstructed MVs (coded_prefix) as temporal reference for next inter frame.

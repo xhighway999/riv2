@@ -5,7 +5,7 @@ use crate::error::{DecodeError, Result};
 use crate::reader::VideoReader;
 use reitero_residual::{
     InterResidualDecodeParams, MvMode, MvRansDecoder, ResidualDecoder, derive_mv_predictors,
-    gather_mv_neighbor_set,
+    gather_mv_neighbor_set, quant_step_from_quality,
 };
 use reitero_video_common::FrameType;
 use reitero_video_common::PackedFrame;
@@ -13,6 +13,7 @@ use reitero_video_common::VideoHeader;
 use reitero_video_common::{MotionVector, Yuv420Frame, build_predicted};
 use chrono::Utc;
 use reitero_video_common::{PackedFrameData, RIV_VERSION};
+use reitero_video_common::{deblock_level_from_quant_step, deblock_yuv420};
 
 fn crop_rgb24(
     storage: &[u8],
@@ -143,8 +144,7 @@ impl<R: VideoReader> Decoder<R> {
         if version != RIV_VERSION {
             return Err(DecodeError::InvalidHeader(format!(
                 "Unsupported version {}, expected {}",
-                version,
-                RIV_VERSION
+                version, RIV_VERSION
             )));
         }
         // Display width/height
@@ -259,13 +259,19 @@ impl<R: VideoReader> Decoder<R> {
         let storage_h = self.header.storage_height as usize;
         let storage_yuv = match packed.data {
             PackedFrameData::Intra { quality, residual_data } => {
-                let yuv = ResidualDecoder::decode_intra(
+                let mut yuv = ResidualDecoder::decode_intra(
                     &residual_data,
                     self.header.storage_width,
                     self.header.storage_height,
                     quality,
                 )
                 .map_err(|e| DecodeError::InvalidFrame(format!("Intra decode error: {e}")))?;
+                if !self.skip_residuals {
+                    // In-loop filter: every intra block is coded, so all edges qualify.
+                    // Skipped in MC-only debug mode, whose point is raw unfiltered output.
+                    let level = deblock_level_from_quant_step(quant_step_from_quality(quality));
+                    deblock_yuv420(&mut yuv, level, true, None);
+                }
                 self.prev_recon_yuv = Some(yuv.clone());
                 // No MVs for intra frames; clear temporal MV history.
                 self.prev_mvs = None;
@@ -386,7 +392,7 @@ impl<R: VideoReader> Decoder<R> {
                 self.timings.build_pred_ns += (Utc::now() - t_pred0).num_nanoseconds().unwrap_or(0).max(0) as u64;
                 // Instrument: residual start
                 reitero_video_common::Instrument::start_measure("residual");
-                let curr = ResidualDecoder::decode_inter(InterResidualDecodeParams {
+                let mut curr = ResidualDecoder::decode_inter(InterResidualDecodeParams {
                     predicted_yuv: &predicted,
                     storage_width: self.header.storage_width,
                     storage_height: self.header.storage_height,
@@ -398,6 +404,24 @@ impl<R: VideoReader> Decoder<R> {
                 .map_err(|e| {
                     DecodeError::InvalidFrame(format!("Inter residual decode error: {e}"))
                 })?;
+                if !self.skip_residuals {
+                    // In-loop filter. Blocks that are pure copies of the previous
+                    // frame (skip + zero MV) already hold filtered pixels; excluding them
+                    // prevents progressive blur of static areas. MUST mirror the encoder.
+                    // Skipped in MC-only debug mode, whose point is raw unfiltered output.
+                    let filter_mask: Vec<bool> = mvs
+                        .iter()
+                        .map(|mv| {
+                            !mv.is_skip()
+                                || mv.dx() != 0
+                                || mv.dy() != 0
+                                || mv.subpixel_x() != 0
+                                || mv.subpixel_y() != 0
+                        })
+                        .collect();
+                    let level = deblock_level_from_quant_step(quant_step_from_quality(quality));
+                    deblock_yuv420(&mut curr, level, false, Some(&filter_mask));
+                }
                 // Instrument: residual stop
                 reitero_video_common::Instrument::stop_measure("residual");
                 // Pull in-process residual-phase counters and attribute to global timings

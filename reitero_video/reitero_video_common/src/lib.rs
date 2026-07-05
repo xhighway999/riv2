@@ -12,6 +12,7 @@
 //! - [`build_predicted`] — motion-compensated prediction helper
 //! - [`RIV_MAGIC`] / [`RIV_VERSION`] — format version constants
 
+mod deblock;
 mod format;
 mod motion;
 mod motion_vector;
@@ -20,6 +21,7 @@ mod yuv;
 mod instrumentation; // <- new instrumentation module
 pub mod rans;
 
+pub use deblock::{deblock_level_from_quant_step, deblock_yuv420};
 pub use format::PackedFrameData;
 pub use format::{FrameType, PackedFrame, RIV_MAGIC, RIV_VERSION, VideoHeader};
 #[doc(hidden)]

@@ -43,6 +43,7 @@ RIV is a self-contained codec in pure Rust with a single code path for native an
 - **Sub-pixel motion** — ½-pixel bilinear interpolation; hex + diamond search
 - **7-mode MV predictor tree** — Nearest, Near, TopRight, TopLeft, Temporal, Zero, New
 - **RDO skip decisions** — lambda-weighted cost model per block
+- **In-loop deblocking** — VP8-style normal loop filter, zero signaling overhead (derived from shared state)
 - **Formally specified** — full normative bitstream spec in [`SPEC.md`](reitero_video/SPEC.md)
 - **MIT / Unlicense** — do whatever you want with it
 
@@ -97,13 +98,13 @@ Requires FFmpeg on `$PATH` for container I/O.
 cargo build --release -p reitero_video_tools
 
 # Encode from any format FFmpeg can read
-ri-cli encode input.mp4 output.riv --quality 85 --quality-uv 80
+ri-cli encode -i input.mp4 -o output.riv --intra-quality 85 --inter-quality 80
 
-# Decode back to a container
-ri-cli decode output.riv out.mp4
+# Decode back to a container (MP4 via FFmpeg/libx264)
+ri-cli decode -i output.riv -o out.mp4
 
-# Roundtrip sanity check
-ri-cli roundtrip input.mp4
+# Play directly in mpv (raw YUV pipe, no re-encode)
+ri-cli decode -i output.riv --mode mpv
 ```
 
 ---
@@ -121,11 +122,11 @@ no I/O or PSNR scoring overhead.
 
 | Codec   | Quality | Bitrate   | PSNR  | SSIM  |
 |---------|---------|-----------|-------|-------|
-| **RIV** | 95/90   | 1559 kbps | 33.95 | 0.923 |
-| **RIV** | 90/85   | 952 kbps  | 32.04 | 0.894 |
-| **RIV** | 85/80   | 665 kbps  | 30.74 | 0.869 |
-| **RIV** | 80/75   | 504 kbps  | 29.79 | 0.848 |
-| **RIV** | 75/70   | 403 kbps  | 29.00 | 0.829 |
+| **RIV** | 95/90   | 1547 kbps | 34.11 | 0.928 |
+| **RIV** | 90/85   | 943 kbps  | 32.25 | 0.900 |
+| **RIV** | 85/80   | 657 kbps  | 30.96 | 0.877 |
+| **RIV** | 80/75   | 497 kbps  | 30.02 | 0.857 |
+| **RIV** | 75/70   | 397 kbps  | 29.25 | 0.840 |
 | VP9     | q=30    | 630 kbps  | 35.56 | 0.946 |
 | VP9     | q=35    | 404 kbps  | 34.24 | 0.931 |
 | VP9     | q=40    | 267 kbps  | 32.93 | 0.911 |

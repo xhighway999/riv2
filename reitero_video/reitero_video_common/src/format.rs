@@ -6,7 +6,7 @@ use crate::MotionVector;
 pub const RIV_MAGIC: [u8; 4] = *b"RIV\0";
 
 /// Format version
-pub const RIV_VERSION: u32 = 4;
+pub const RIV_VERSION: u32 = 5;
 
 /// Frame type for video compression
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

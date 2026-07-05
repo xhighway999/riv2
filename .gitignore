@@ -9,3 +9,5 @@ bench/sequences/
 bench/work/
 bench/image_sequences/
 bench/*.png
+# Quality harness reports
+ri-quality-results/

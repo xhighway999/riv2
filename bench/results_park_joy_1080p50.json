@@ -105,102 +105,6 @@
   },
   {
     "sequence": "park_joy_1080p50",
-    "codec": "riv2",
-    "quality_param": [
-      70,
-      65
-    ],
-    "bitrate_kbps": 24072.92,
-    "psnr": 24.9854,
-    "ssim": 0.761872,
-    "encode_time_s": 114.678,
-    "decode_time_s": 143.779,
-    "encode_fps": 4.36,
-    "decode_fps": 3.48,
-    "encoded_bytes": 30091149
-  },
-  {
-    "sequence": "park_joy_1080p50",
-    "codec": "riv2",
-    "quality_param": [
-      75,
-      70
-    ],
-    "bitrate_kbps": 29903.78,
-    "psnr": 25.6017,
-    "ssim": 0.784929,
-    "encode_time_s": 96.246,
-    "decode_time_s": 140.034,
-    "encode_fps": 5.2,
-    "decode_fps": 3.57,
-    "encoded_bytes": 37379729
-  },
-  {
-    "sequence": "park_joy_1080p50",
-    "codec": "riv2",
-    "quality_param": [
-      80,
-      75
-    ],
-    "bitrate_kbps": 38362.06,
-    "psnr": 26.3549,
-    "ssim": 0.809064,
-    "encode_time_s": 101.598,
-    "decode_time_s": 156.156,
-    "encode_fps": 4.92,
-    "decode_fps": 3.2,
-    "encoded_bytes": 47952571
-  },
-  {
-    "sequence": "park_joy_1080p50",
-    "codec": "riv2",
-    "quality_param": [
-      85,
-      80
-    ],
-    "bitrate_kbps": 51427.03,
-    "psnr": 27.3321,
-    "ssim": 0.836133,
-    "encode_time_s": 102.001,
-    "decode_time_s": 139.454,
-    "encode_fps": 4.9,
-    "decode_fps": 3.59,
-    "encoded_bytes": 64283789
-  },
-  {
-    "sequence": "park_joy_1080p50",
-    "codec": "riv2",
-    "quality_param": [
-      90,
-      85
-    ],
-    "bitrate_kbps": 73573.02,
-    "psnr": 28.6802,
-    "ssim": 0.865892,
-    "encode_time_s": 103.093,
-    "decode_time_s": 144.693,
-    "encode_fps": 4.85,
-    "decode_fps": 3.46,
-    "encoded_bytes": 91966277
-  },
-  {
-    "sequence": "park_joy_1080p50",
-    "codec": "riv2",
-    "quality_param": [
-      95,
-      90
-    ],
-    "bitrate_kbps": 117683.16,
-    "psnr": 30.7754,
-    "ssim": 0.901182,
-    "encode_time_s": 111.598,
-    "decode_time_s": 154.483,
-    "encode_fps": 4.48,
-    "decode_fps": 3.24,
-    "encoded_bytes": 147103947
-  },
-  {
-    "sequence": "park_joy_1080p50",
     "codec": "vp9",
     "quality_param": 15,
     "bitrate_kbps": 183338.04,
@@ -510,5 +414,101 @@
     "encode_fps": 125.17,
     "decode_fps": 3.41,
     "encoded_bytes": 13752594
+  },
+  {
+    "sequence": "park_joy_1080p50",
+    "codec": "riv2",
+    "quality_param": [
+      70,
+      65
+    ],
+    "bitrate_kbps": 23844.54,
+    "psnr": 25.1285,
+    "ssim": 0.770533,
+    "encode_time_s": 179.373,
+    "decode_time_s": 158.387,
+    "encode_fps": 2.79,
+    "decode_fps": 3.16,
+    "encoded_bytes": 29805677
+  },
+  {
+    "sequence": "park_joy_1080p50",
+    "codec": "riv2",
+    "quality_param": [
+      75,
+      70
+    ],
+    "bitrate_kbps": 29656.39,
+    "psnr": 25.73,
+    "ssim": 0.792438,
+    "encode_time_s": 145.591,
+    "decode_time_s": 137.596,
+    "encode_fps": 3.43,
+    "decode_fps": 3.63,
+    "encoded_bytes": 37070491
+  },
+  {
+    "sequence": "park_joy_1080p50",
+    "codec": "riv2",
+    "quality_param": [
+      80,
+      75
+    ],
+    "bitrate_kbps": 38092.54,
+    "psnr": 26.4735,
+    "ssim": 0.816209,
+    "encode_time_s": 66.114,
+    "decode_time_s": 136.09,
+    "encode_fps": 7.56,
+    "decode_fps": 3.67,
+    "encoded_bytes": 47615669
+  },
+  {
+    "sequence": "park_joy_1080p50",
+    "codec": "riv2",
+    "quality_param": [
+      85,
+      80
+    ],
+    "bitrate_kbps": 51138.61,
+    "psnr": 27.4363,
+    "ssim": 0.841962,
+    "encode_time_s": 54.711,
+    "decode_time_s": 142.953,
+    "encode_fps": 9.14,
+    "decode_fps": 3.5,
+    "encoded_bytes": 63923265
+  },
+  {
+    "sequence": "park_joy_1080p50",
+    "codec": "riv2",
+    "quality_param": [
+      90,
+      85
+    ],
+    "bitrate_kbps": 73217.92,
+    "psnr": 28.7664,
+    "ssim": 0.870703,
+    "encode_time_s": 163.974,
+    "decode_time_s": 163.773,
+    "encode_fps": 3.05,
+    "decode_fps": 3.05,
+    "encoded_bytes": 91522401
+  },
+  {
+    "sequence": "park_joy_1080p50",
+    "codec": "riv2",
+    "quality_param": [
+      95,
+      90
+    ],
+    "bitrate_kbps": 117262.28,
+    "psnr": 30.8283,
+    "ssim": 0.903995,
+    "encode_time_s": 143.71,
+    "decode_time_s": 173.655,
+    "encode_fps": 3.48,
+    "decode_fps": 2.88,
+    "encoded_bytes": 146577855
   }
 ]

@@ -1,4 +1,4 @@
-# ReItero `.riv` Video Format Spec (v4)
+# ReItero `.riv` Video Format Spec (v5)
 
 This document describes the current on-disk format for ReItero video files (`.riv`) and the exact encode/decode behavior implemented in the codebase.
 
@@ -6,6 +6,7 @@ This document describes the current on-disk format for ReItero video files (`.ri
   - `reitero_video/reitero_video_common/src/format.rs` (binary layout)
   - `reitero_video/reitero_video_common/src/motion_vector.rs` (motion vector struct)
   - `reitero_video/reitero_video_common/src/fast_motion.rs` (motion-compensated prediction)
+  - `reitero_video/reitero_video_common/src/deblock.rs` (in-loop deblocking filter, v5+)
   - `reitero_video/reitero_encode/src/encoder.rs` + `reitero_video/reitero_encode/src/motion.rs` (encoder)
   - `reitero_video/reitero_decode/src/decoder.rs` (decoder)
   - `reitero_video/reitero_residual/src/residual.rs` + `reitero_video/reitero_residual/src/rans.rs` (residual encoding/decoding)
@@ -34,7 +35,7 @@ This document describes the current on-disk format for ReItero video files (`.ri
 | Offset | Size | Type | Name |
 |---:|---:|---|---|
 | 0  | 4  | bytes | `magic` = `RIV\0` |
-| 4  | 4  | u32 | `version` = `4` |
+| 4  | 4  | u32 | `version` = `5` |
 | 8  | 4  | u32 | `display_width` |
 | 12 | 4  | u32 | `display_height` |
 | 16 | 4  | u32 | `storage_width` |
@@ -492,8 +493,9 @@ The encoder maintains:
 4. DCT encode all planes with **JPEG-style perceptual quantization matrices** and **DC prediction**.
 5. RANS-encode coefficients with DC prediction enabled.
 6. Reconstruct: IDCT + dequantize, then `pixel = residual + 128`, clamped to [0, 255].
-7. Set `prev_recon_yuv = recon_yuv`. Clear `prev_mvs`. Reset MV RANS contexts.
-8. Write an Intra record with `(quality, res_size, residual_yuv420)`.
+7. **Deblock** `recon_yuv` in place (§14), level derived from `quality`, filtering **all** interior block edges (every intra block is coded).
+8. Set `prev_recon_yuv = recon_yuv`. Clear `prev_mvs`. Reset MV RANS contexts.
+9. Write an Intra record with `(quality, res_size, residual_yuv420)`.
 
 ### 7.2 P-frame (motion-compensated inter)
 
@@ -506,8 +508,9 @@ Given `prev_recon_yuv` and `curr_storage_yuv`:
 5. **Bias computation**: collect all raw NEW-mode deltas and compute per-axis `global_mv` bias (see §3.2).
 6. **Motion vector encoding**: construct `MvCodedBlock` list (subtracting bias from NEW deltas), update skip flags with the optimized skip mask (blocks whose residual quantized to all-zeros are additionally marked skip), encode via `MvRansEncoder`.
 7. **Reconstruct reference**: IDCT + dequantize residuals, `recon_yuv = predicted_yuv + residual`.
-8. Set `prev_recon_yuv = recon_yuv`. Set `prev_mvs` = the **reconstructed** absolute MV list (one entry per block, derived by applying mode + predictors during step 2 — identical to what the decoder would reconstruct). Do **not** use raw motion-search results: when a predictor carries a `MinusHalf` subpixel component (propagated from an earlier frame), the reconstructed MV's component representation can differ from the canonical search output even at the same half-pixel position, and using the wrong list breaks `Temporal`-mode decoding in the next inter frame.
-9. Write an Inter record containing `(quality, global_mv, mv_deflate, residual_yuv420)`.
+8. **Deblock** `recon_yuv` in place (§14), level derived from `inter_quality`, with the per-block filter mask built from the **optimized** skip mask and the **reconstructed** MV list (§14.3).
+9. Set `prev_recon_yuv = recon_yuv`. Set `prev_mvs` = the **reconstructed** absolute MV list (one entry per block, derived by applying mode + predictors during step 2 — identical to what the decoder would reconstruct). Do **not** use raw motion-search results: when a predictor carries a `MinusHalf` subpixel component (propagated from an earlier frame), the reconstructed MV's component representation can differ from the canonical search output even at the same half-pixel position, and using the wrong list breaks `Temporal`-mode decoding in the next inter frame.
+10. Write an Inter record containing `(quality, global_mv, mv_deflate, residual_yuv420)`.
 
 ---
 
@@ -524,8 +527,9 @@ Decoder maintains:
 1. From the Intra record, read `quality` and `residual_yuv420`.
 2. Create RANS decoder with DC prediction, decode all blocks (no skip mask).
 3. Build JPEG-style quant tables from `quality`, IDCT + dequantize, reconstruct as `pixel = residual + 128`.
-4. Set `prev_recon_yuv = recon_yuv`. Clear `prev_mvs`. Reset MV RANS contexts.
-5. Convert `recon_yuv` to RGB24 and crop to display size for output.
+4. **Deblock** `recon_yuv` in place (§14) exactly as the encoder did.
+5. Set `prev_recon_yuv = recon_yuv`. Clear `prev_mvs`. Reset MV RANS contexts.
+6. Convert `recon_yuv` to RGB24 and crop to display size for output.
 
 ### 8.2 P-frame
 
@@ -540,8 +544,9 @@ Decoder maintains:
    - Compute adaptive per-block quant steps from `predicted_yuv` (same AQ formula as encoder).
    - IDCT + dequantize using per-block AQ quant steps.
 5. Apply residuals: `recon_yuv = predicted_yuv + residual`, clamped to [0, 255].
-6. Set `prev_recon_yuv = recon_yuv`. Store MVs as `prev_mvs`.
-7. Convert `recon_yuv` to RGB24 and crop to display size for output.
+6. **Deblock** `recon_yuv` in place (§14) with the filter mask from the decoded skip flags and reconstructed MVs.
+7. Set `prev_recon_yuv = recon_yuv`. Store MVs as `prev_mvs`.
+8. Convert `recon_yuv` to RGB24 and crop to display size for output.
 
 ---
 
@@ -766,3 +771,75 @@ Let `observed = if b == 0 { z } else { o }` and `other = if b == 0 { o } else { 
 The special case prevents the model from forgetting a strong prior when the opposite symbol has appeared only once. The normal halving keeps counters from saturating and allows the model to track drifting sources.
 
 **Note on implementation**: the exact numerical values produced by the update rule above must match to the bit. In particular, the `other == 1` guard uses the value of `other` *before* any modification.
+
+---
+
+## 14. In-loop deblocking filter (normative, v5+)
+
+Authoritative code: `reitero_video/reitero_video_common/src/deblock.rs`.
+
+Applied in place to every reconstructed storage frame **before** it is stored as `prev_recon_yuv` (and, in the decoder, before RGB conversion/output). Encoder and decoder MUST apply it with identical inputs or the prediction references drift. Nothing is transmitted: the filter level derives from the frame's `quality` byte and the filter mask from data both sides already reconstruct.
+
+### 14.1 Filter level and thresholds
+
+```
+level = clamp(round(quant_step(quality) * 0.6), 0, 63)
+```
+
+where `quant_step` is the §5.3.1 mapping and `quality` is the frame record's quality byte (`intra_quality` for I-frames, `inter_quality` for P-frames — AQ per-block steps are NOT used). `level = 0` disables the filter for the frame. The `0.6` scale was tuned on the bench footage set (akiyo/bus/foreman/mobile CIF + park_joy 1080p, three quality points each) for minimum bytes × DSSIM.
+
+From `level`, derive the RFC 6386 §15.1 thresholds for macroblock edges with `sharpness = 0`:
+
+```
+interior_limit = max(level, 1)
+edge_limit     = (level + 2) * 2 + interior_limit
+hev_threshold  = I-frame:  level >= 40 → 2, level >= 15 → 1, else 0
+                 P-frame:  level >= 40 → 3, level >= 20 → 2, level >= 15 → 1, else 0
+```
+
+### 14.2 Filter algorithm
+
+The filter is the VP8 "normal loop filter" for **macroblock edges** (RFC 6386 §15.2/§15.3) applied to interior block-grid edges only (never the frame border): the **16-pixel** grid on the Y plane and the corresponding **8-pixel** grid on the U and V planes (both grids map 1:1 onto the macroblock grid, so one mask entry per 16×16 macroblock covers all three planes). RIV has no interior transform edges (one 16×16 luma / 8×8 chroma DCT per macroblock), so the subblock-edge filter variant does not exist here.
+
+Per plane, first all **vertical** edges are processed (each block column boundary `x = grid, 2*grid, …`, every row top-to-bottom), then all **horizontal** edges (each block row boundary `y = grid, 2*grid, …`, every column left-to-right). The second pass reads the output of the first.
+
+Each edge-crossing line examines eight pixels `p3 p2 p1 p0 | q0 q1 q2 q3` (four each side, perpendicular to the edge):
+
+1. **Filter mask** (unbiased 0..255 values, integer arithmetic, truncating division) — filter only if the step across the edge is small AND both sides are locally smooth:
+
+```
+  2*|p0 - q0| + |q1 - p1|/2 <= edge_limit
+  and |p3-p2| <= interior_limit and |p2-p1| <= interior_limit and |p1-p0| <= interior_limit
+  and |q1-q0| <= interior_limit and |q2-q1| <= interior_limit and |q3-q2| <= interior_limit
+```
+
+2. **High edge variance (hev)**: `hev = |p1-p0| > hev_threshold or |q1-q0| > hev_threshold`.
+
+3. **Adjustment** on signed-biased values (`v - 128`; all intermediate values clamped to `[-128, 127]`, written `c(...)`; `>>` is arithmetic shift), with `w = c(c(p1 - q1) + 3*(q0 - p0))`:
+
+   - If `hev` (locally sharp — narrow correction only):
+
+     ```
+     F1 = c(w + 4) >> 3;  F2 = c(w + 3) >> 3
+     q0' = q0 - F1;  p0' = p0 + F2
+     ```
+
+   - Else (locally smooth — wide taper across three pixels each side):
+
+     ```
+     a = c((27*w + 63) >> 7);  q0' = c(q0 - a);  p0' = c(p0 + a)
+     a = c((18*w + 63) >> 7);  q1' = c(q1 - a);  p1' = c(p1 + a)
+     a = c(( 9*w + 63) >> 7);  q2' = c(q2 - a);  p2' = c(p2 + a)
+     ```
+
+   Results are re-biased (`+ 128`) and clamped to `[0, 255]`. `p3`/`q3` are never modified.
+
+### 14.3 Filter mask (P-frames)
+
+Blocks that are pure copies of the previous frame already contain filtered pixels; re-filtering them every frame would progressively blur static areas. Therefore each macroblock gets a flag:
+
+```
+filter[b] = !skip[b] || dx[b] != 0 || dy[b] != 0 || subpel_x[b] != 0 || subpel_y[b] != 0
+```
+
+using the **optimized** (authoritative, §4.7) skip flag and the **reconstructed** absolute MV of the block (the same list stored as `prev_mvs`). An edge is filtered iff **either** adjacent block's flag is set. I-frames filter all edges unconditionally (every block is coded).

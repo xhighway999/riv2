@@ -1,10 +1,11 @@
 use anyhow::{Context, Result};
 use reitero_residual::{
     InterResidualDecodeParams, MvMode, MvRansDecoder, ResidualDecoder, derive_mv_predictors,
-    gather_mv_neighbor_set,
+    gather_mv_neighbor_set, quant_step_from_quality,
 };
 use reitero_video_common::{
     FrameType, PackedFrame, PackedFrameData, RIV_MAGIC, RIV_VERSION, VideoHeader,
+    deblock_level_from_quant_step, deblock_yuv420,
 };
 use reitero_video_common::{MotionVector, Yuv420Frame, build_predicted};
 use std::fs;
@@ -31,7 +32,7 @@ fn parse_header(mut r: impl Read) -> Result<VideoHeader> {
     }
     let version = u32::from_le_bytes([buf[4], buf[5], buf[6], buf[7]]);
     if version != RIV_VERSION {
-        anyhow::bail!("unsupported riv version: {version}");
+        anyhow::bail!("unsupported riv version: {version}, expected {RIV_VERSION}");
     }
     let display_width = u32::from_le_bytes([buf[8], buf[9], buf[10], buf[11]]);
     let display_height = u32::from_le_bytes([buf[12], buf[13], buf[14], buf[15]]);
@@ -140,6 +141,10 @@ pub fn extract_frame_to_pwd(input: &Path, frame_index: u64) -> Result<PathBuf> {
     let mut prev_recon: Option<Yuv420Frame> = None;
     // Previous frame's motion vectors for temporal MV prediction
     let mut prev_mvs: Option<Vec<MotionVector>> = None;
+    // MV entropy contexts persist across inter frames (reset at each intra),
+    // exactly like the main decoder — a fresh decoder per frame would desync
+    // on the second consecutive inter frame.
+    let mut mv_decoder = MvRansDecoder::new();
 
     for i in 0..=frame_index {
         let pf =
@@ -147,13 +152,16 @@ pub fn extract_frame_to_pwd(input: &Path, frame_index: u64) -> Result<PathBuf> {
 
         match pf.data {
             PackedFrameData::Intra { quality, residual_data } => {
-                let recon_yuv = ResidualDecoder::decode_intra(
+                let mut recon_yuv = ResidualDecoder::decode_intra(
                     &residual_data,
                     header.storage_width,
                     header.storage_height,
                     quality,
                 )
                 .map_err(|e| anyhow::anyhow!("intra decode failed: {e}"))?;
+                let level = deblock_level_from_quant_step(quant_step_from_quality(quality));
+                deblock_yuv420(&mut recon_yuv, level, true, None);
+                mv_decoder.reset_contexts();
                 if i == frame_index {
                     let recon = recon_yuv.to_rgb24()
                         .map_err(|e| anyhow::anyhow!("intra yuv->rgb failed: {e}"))?;
@@ -191,7 +199,6 @@ pub fn extract_frame_to_pwd(input: &Path, frame_index: u64) -> Result<PathBuf> {
                 let blocks_h = storage_h / 16;
                 let num_blocks = blocks_w * blocks_h;
 
-                let mut mv_decoder = MvRansDecoder::new();
                 mv_decoder.consume_frame(&mv_deflate);
                 let mv_blocks = mv_decoder.decode_frame(blocks_w, blocks_h);
 
@@ -250,9 +257,16 @@ pub fn extract_frame_to_pwd(input: &Path, frame_index: u64) -> Result<PathBuf> {
 
                     let mark_skip = skip_flag;
 
-                    let spx = match block.subpel_x { reitero_residual::Subpel::PlusHalf => 1, reitero_residual::Subpel::MinusHalf => -1, _ => 0 };
-                    let spy = match block.subpel_y { reitero_residual::Subpel::PlusHalf => 1, reitero_residual::Subpel::MinusHalf => -1, _ => 0 };
-                    mvs.push(MotionVector::new(dx, dy, spx, spy, mark_skip));
+                    // NEW blocks carry explicit subpel flags; every other mode inherits
+                    // the predictor's subpel components (mirrors reitero_decode).
+                    let mv = if block.mode == MvMode::New {
+                        let spx = match block.subpel_x { reitero_residual::Subpel::PlusHalf => 1, reitero_residual::Subpel::MinusHalf => -1, _ => 0 };
+                        let spy = match block.subpel_y { reitero_residual::Subpel::PlusHalf => 1, reitero_residual::Subpel::MinusHalf => -1, _ => 0 };
+                        MotionVector::new(dx, dy, spx, spy, mark_skip)
+                    } else {
+                        MotionVector::new(dx, dy, base.2, base.3, mark_skip)
+                    };
+                    mvs.push(mv);
                     skip_mask.push(mark_skip);
                 }
 
@@ -261,7 +275,7 @@ pub fn extract_frame_to_pwd(input: &Path, frame_index: u64) -> Result<PathBuf> {
 
                 let predicted = build_predicted(prev, storage_w, storage_h, &mvs);
 
-                let recon = ResidualDecoder::decode_inter(InterResidualDecodeParams {
+                let mut recon = ResidualDecoder::decode_inter(InterResidualDecodeParams {
                     predicted_yuv: &predicted,
                     storage_width: header.storage_width,
                     storage_height: header.storage_height,
@@ -271,6 +285,19 @@ pub fn extract_frame_to_pwd(input: &Path, frame_index: u64) -> Result<PathBuf> {
                     skip_residuals: false, // riv_extract always decodes residuals
                 })
                 .map_err(|e| anyhow::anyhow!("inter residual decode error: {e}"))?;
+                // Same mask as the main decoder: static copy blocks keep their pixels.
+                let filter_mask: Vec<bool> = mvs
+                    .iter()
+                    .map(|mv| {
+                        !mv.is_skip()
+                            || mv.dx() != 0
+                            || mv.dy() != 0
+                            || mv.subpixel_x() != 0
+                            || mv.subpixel_y() != 0
+                    })
+                    .collect();
+                let level = deblock_level_from_quant_step(quant_step_from_quality(quality));
+                deblock_yuv420(&mut recon, level, false, Some(&filter_mask));
 
                 if i == frame_index {
                     let predicted_rgb = predicted
